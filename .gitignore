@@ -1,0 +1,51 @@
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# Compiled output
+Angular-Client/dist
+Angular-Client/tmp
+Angular-Client/out-tsc
+Angular-Client/bazel-out
+
+Node-Server/dist
+Node-Server/tmp
+Node-Server/out-tsc
+Node-Server/bazel-out
+
+# Node
+Angular-Client/node_modules
+Angular-Client/npm-debug.log
+Angular-Client/yarn-error.log
+
+Node-Server/node_modules
+Node-Server/npm-debug.log
+Node-Server/yarn-error.log
+
+# IDEs and editors
+Angular-Client/.idea/
+Angular-Client/.project
+Angular-Client/.classpath
+Angular-Client/.c9/
+Angular-Client/*.launch
+Angular-Client/.settings/
+Angular-Client/*.sublime-workspace
+
+# Visual Studio Code
+Angular-Client/.vscode/*
+Angular-Client/!.vscode/settings.json
+Angular-Client/!.vscode/tasks.json
+Angular-Client/!.vscode/launch.json
+Angular-Client/!.vscode/extensions.json
+Angular-Client/.history/*
+
+# Miscellaneous
+Angular-Client/.angular/cache
+Angular-Client.sass-cache/
+Angular-Client/connect.lock
+Angular-Client/coverage
+Angular-Client/libpeerconnection.log
+Angular-Client/testem.log
+Angular-Client/typings
+
+# System files
+Angular-Client/.DS_Store
+Angular-Client/Thumbs.db

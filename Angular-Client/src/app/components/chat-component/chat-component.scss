@@ -1,0 +1,91 @@
+.chat-container {
+    display: flex;
+    border: 5px solid black;
+    justify-content: space-around;
+    max-width: 916px;
+    min-height: 300px;
+
+    .chat-box {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 10px;
+        justify-content: space-between;
+        height: auto;
+        overflow-y: auto;
+
+        .messages-section {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 250px;
+            margin-bottom: 10px;
+
+            .message {
+                padding: 5px;
+                border-bottom: 1px solid #eee;
+
+                // &:last-child {
+                //     border-bottom: none;
+                // }
+            }
+        }
+    }
+
+    .online-users {
+        flex: 1;
+        width: 200px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 10px;
+        height: auto;
+        overflow-y: auto;
+
+        h3 {
+            margin-top: 0;
+            text-align: center;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+
+            li {
+                padding: 5px 0;
+                border-bottom: 1px solid #eee;
+
+                &:last-child {
+                    border-bottom: none;
+                }
+            }
+        }
+    }
+}
+
+// put this section at the bottom always
+.message-input {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+
+    input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    button {
+        padding: 10px 20px;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+
+        &:hover {
+            background-color: #0056b3;
+        }
+    }
+}

@@ -1,0 +1,29 @@
+<h3 class="header">Registration</h3>
+<div class="navigation-btn" (click)="goToLoginPage()">Login</div>
+<form class="registration-form" [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+    <div class="form-field">
+        <label for="username">Username:</label>
+        <input type="text" id="username" formControlName="username">
+        @if(registrationForm.controls['username'].invalid && (registrationForm.controls['username'].dirty ||
+        registrationForm.controls['username'].touched)) {
+        <div class="form-error">Invalid username</div>
+        }
+    </div>
+    <div class="form-field">
+        <label for="email">Email:</label>
+        <input type="email" id="email" formControlName="email">
+        @if(registrationForm.controls['email'].invalid && (registrationForm.controls['email'].dirty ||
+        registrationForm.controls['email'].touched)) {
+        <div class="form-error">invalid email</div>
+        }
+    </div>
+    <div class="form-field">
+        <label for="password">Password:</label>
+        <input type="password" id="password" formControlName="password">
+        @if(registrationForm.controls['password'].invalid && (registrationForm.controls['password'].dirty ||
+        registrationForm.controls['password'].touched)) {
+        <div class="form-error"> invalid password</div>
+        }
+    </div>
+    <button class="submit-btn" type="submit">Register</button>
+</form>

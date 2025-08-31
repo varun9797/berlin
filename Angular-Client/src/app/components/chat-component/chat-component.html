@@ -1,0 +1,24 @@
+<h2>Angular Chat</h2>
+@if(!isChatStarted) {
+<p>Welcome, {{ userName }}!</p>
+<input [(ngModel)]="userName" placeholder="Enter Code" />
+<button (click)="connectChat()">Set Name</button>
+} @else {
+<div class="chat-container">
+    <div class="chat-box">
+        <div #messageSection class="messages-section">
+            <h3>Chat Box</h3>
+            <div class="message" *ngFor="let msg of messages">{{ msg.user }}: {{ msg.message }}</div>
+        </div>
+
+        <div class="message-input">
+            <input [(ngModel)]="message" placeholder="Type a message" />
+            <button (click)="sendMessage()">Send</button>
+        </div>
+    </div>
+    <div class="online-users">
+        <h3>Online Users</h3>
+        <div *ngFor="let user of onlineUsers">{{ user }}</div>
+    </div>
+</div>
+}

@@ -1,0 +1,17 @@
+<h3 class="header">Login Page</h3>
+<div class="navigation-btn" (click)="goToSignUpPage()">Signup</div>
+<form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    <div class="form-field">
+        <label for="username">Username:</label>
+        <input type="text" id="username" formControlName="username">
+        @if(loginForm.controls['username'].invalid && (loginForm.controls['username'].dirty ||
+        loginForm.controls['username'].touched)) {
+        <div class="form-error">Username is invalid.</div>
+        }
+    </div>
+    <div class="form-field">
+        <label for="password">Password:</label>
+        <input type="password" id="password" formControlName="password">
+    </div>
+    <button class="submit-btn" type="submit">Login</button>
+</form>
