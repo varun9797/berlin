@@ -23,4 +23,9 @@ export class TokenService {
   getToken(): string | null {
     return localStorage.getItem(constants.AUTH_TOKEN_KEY);
   }
+
+  getUserNameFromToken(): string | null {
+    const decodedToken = this.jwtHelper.decodeToken(localStorage.getItem(constants.AUTH_TOKEN_KEY) || '');
+    return decodedToken ? decodedToken.username : null;
+  }
 }

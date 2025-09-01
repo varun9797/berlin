@@ -19,16 +19,16 @@
         .messages-section {
             flex: 1;
             overflow-y: auto;
-            max-height: 250px;
+            max-height: 180px;
             margin-bottom: 10px;
 
             .message {
                 padding: 5px;
                 border-bottom: 1px solid #eee;
 
-                // &:last-child {
-                //     border-bottom: none;
-                // }
+                &:last-child {
+                    border-bottom: none;
+                }
             }
         }
     }

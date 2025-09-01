@@ -3,7 +3,7 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ChatServices } from '../../services/chat-services';
 import { UserService } from '../../services/user-service';
-
+import { TokenService } from './../../services/token-service';
 
 
 @Component({
@@ -15,22 +15,35 @@ import { UserService } from '../../services/user-service';
 export class ChatComponent {
   message: string = '';
   messages: any[] = [];
+  ownMessages: any[] = [];
 
   userName: string = '';
   isChatStarted: boolean = false;
   onlineUsers: string[] = [];
+  selectedUser: string = '';
 
   @ViewChild('messageSection') private messageSection: ElementRef | undefined;
 
-  constructor(private chatService: ChatServices, private userService: UserService) { };
+  constructor(private chatService: ChatServices,
+    private userService: UserService,
+    private tokenService: TokenService) { };
 
   ngOnInit(): void {
+    this.userName = this.tokenService.getUserNameFromToken() || '';
+    this.connectChat();
     this.getOnlineUsers();
     this.chatService.onMessage((msg: string) => {
       console.log(msg);
       this.messages.push(msg);
-
+      this.scrollToBottom();
     });
+  }
+  refreshUserList(): void {
+    this.getOnlineUsers();
+  }
+
+  selectUser(user: string): void {
+    this.selectedUser = user;
   }
 
   getOnlineUsers(): void {
@@ -38,8 +51,12 @@ export class ChatComponent {
       next: (response) => {
         let onlineUsers = [];
         for (let key in response) {
-          onlineUsers.push(key);
+          if (this.userName !== key) {
+            onlineUsers.push(key);
+          }
         }
+        this.selectedUser = onlineUsers[0] || '';
+
         this.onlineUsers = onlineUsers;
         console.log('Online users:', response);
       }, error: (error) => {
@@ -50,20 +67,22 @@ export class ChatComponent {
 
   sendMessage(): void {
     if (this.message.trim()) {
-      this.chatService.sendMessage(this.userName, this.message);
-
-      setTimeout(() => {
-        if (this.messageSection) {
-          this.messageSection.nativeElement.scrollTop = this.messageSection.nativeElement.scrollHeight;
-        }
-
-      }, 50)
+      this.chatService.sendMessage(this.selectedUser, this.message);
+      this.scrollToBottom();
+      this.message = '';
     }
+  }
+
+  scrollToBottom(): void {
+    setTimeout(() => {
+      if (this.messageSection) {
+        this.messageSection.nativeElement.scrollTop = this.messageSection.nativeElement.scrollHeight;
+      }
+    }, 50)
   }
 
   connectChat(): void {
     if (this.userName.trim()) {
-
       this.isChatStarted = true;
       this.chatService.registeruser(this.userName);
     }
