@@ -12,8 +12,8 @@ export default function chatSocket(io: Server) {
         // Store the user when they join
         socket.on("register", (userDetails: UserType) => {
             console.log("User registered:", userDetails);
-            socket.data[userDetails.id] = userDetails; // ✅ store userId safely
-            users[userDetails.id] = {
+            socket.data[userDetails.userId] = userDetails; // ✅ store userId safely
+            users[userDetails.userId] = {
                 ...userDetails, socketId: socket.id
 
             }
@@ -21,15 +21,24 @@ export default function chatSocket(io: Server) {
         });
 
         socket.on("privateMessage", (messageDetails: SendMessageType) => {
-            console.log("privateMessage", users, messageDetails);
-            storeConversation(socket.data.userId, messageDetails.reciverId, messageDetails.message);
-            const toSocketId = users[messageDetails.reciverId].socketId;
+            // console.log("privateMessage", users, messageDetails);
+            const toSocketId = users[messageDetails.reciverId]?.socketId;
             if (toSocketId) {
-                console.log(` private message from ${socket.data.userId} to ${messageDetails.reciverId}: ${messageDetails.message}`);
+                storeConversation(socket.data.userId, messageDetails.reciverId, messageDetails.message);
+                console.log(` private message from ${socket.data.senderId} to ${messageDetails.reciverId}: ${messageDetails.message}`);
                 io.to(toSocketId).emit("privateMessage", {
-                    sender: socket.data.userId,
+                    senderName: socket.data[messageDetails.senderId]?.username,
                     content: messageDetails.message,
-                    senderId: socket.data.userId,
+                    senderId: socket.data[messageDetails.senderId]?.userId,
+                });
+            }
+            const toSenderSocketId = users[messageDetails.senderId]?.socketId;
+            if (toSenderSocketId) {
+                console.log(` private message from ${JSON.stringify(socket.data[messageDetails.senderId])} to ${messageDetails.reciverId}: ${messageDetails.message}`);
+                io.to(toSenderSocketId).emit("privateMessage", {
+                    senderName: socket.data[messageDetails.senderId]?.username,
+                    content: messageDetails.message,
+                    senderId: socket.data[messageDetails.senderId]?.userId,
                 });
             }
         });

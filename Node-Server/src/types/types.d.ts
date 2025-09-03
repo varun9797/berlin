@@ -1,3 +1,5 @@
+import { Request } from "express";
+
 export interface SendMessageType {
     senderId: string;
     reciverId: string;
@@ -6,5 +8,9 @@ export interface SendMessageType {
 
 export interface UserType {
     username: string;
-    id: string;
+    userId: string;
+}
+
+export interface AuthRequest extends Request {
+    userId?: string;
 }

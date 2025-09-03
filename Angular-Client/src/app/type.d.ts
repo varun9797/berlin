@@ -22,7 +22,7 @@ type ReceiveMessageObj = {
 
 type UserObject = {
     username: string;
-    id: string;
+    userId: string;
 }
 
 type UserObject = {

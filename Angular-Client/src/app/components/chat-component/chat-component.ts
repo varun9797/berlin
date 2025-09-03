@@ -20,7 +20,7 @@ export class ChatComponent {
   userId: string = '';
   isChatStarted: boolean = false;
   onlineUsers: UserObject[] = [];
-  selectedUser: UserObject = { username: '', id: '' };
+  selectedUser: UserObject = { username: '', userId: '' };
 
   @ViewChild('messageSection') private messageSection: ElementRef | undefined;
 
@@ -35,7 +35,7 @@ export class ChatComponent {
     this.getOnlineUsers();
     this.chatService.onMessage((msg: ReceiveMessageObj) => {
       msg.sender = msg.senderId;
-      console.log('New message received:', msg.sender, this.userId);
+      console.log('New message received:', msg.senderId, this.userId);
       this.messages.push(msg);
       this.scrollToBottom();
     });
@@ -47,7 +47,7 @@ export class ChatComponent {
   selectUser(user: UserObject): void {
     this.selectedUser = user;
     let messagePagination: MessagePagination = { page: 1, limit: 20 };
-    this.chatService.getOfflineMessages(user.id, messagePagination).subscribe({
+    this.chatService.getOfflineMessages(user.userId, messagePagination).subscribe({
       next: (response: any) => {
         this.messages = response.data || [];
         console.log('Offline messages:', response);
@@ -63,9 +63,9 @@ export class ChatComponent {
       next: (response: UserObject[]) => {
         let onlineUsers = [];
         for (let key in response) {
-          // if (this.userName !== response[key].username) {
-          onlineUsers.push(response[key]);
-          // }
+          if (this.userName !== response[key].username) {
+            onlineUsers.push(response[key]);
+          }
         }
         this.selectedUser = onlineUsers[0] || '';
 
@@ -79,7 +79,7 @@ export class ChatComponent {
   sendMessage(): void {
     if (this.message.trim()) {
       // this.chatService.sendMessage(this.selectedUser, this.message);
-      let messageObj: SendMessageObj = { senderId: this.userId, reciverId: this.selectedUser.id, message: this.message.trim() };
+      let messageObj: SendMessageObj = { senderId: this.userId, reciverId: this.selectedUser.userId, message: this.message.trim() };
       this.chatService.sendMessage(messageObj);
       this.scrollToBottom();
       this.message = '';
@@ -97,7 +97,7 @@ export class ChatComponent {
   connectChat(): void {
     if (this.userName.trim()) {
       this.isChatStarted = true;
-      const userObj: UserObject = { username: this.userName, id: this.tokenService.getUserIdFromToken() || '' };
+      const userObj: UserObject = { username: this.userName, userId: this.tokenService.getUserIdFromToken() || '' };
       this.chatService.registeruser(userObj);
     }
   }

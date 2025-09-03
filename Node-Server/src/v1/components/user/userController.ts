@@ -39,12 +39,12 @@ export const userLogin = async (req: Request, res: Response) => {
             return res.status(httpStatusCodes.UNAUTHORIZED).send("Invalid credentials");
         } else {
             const token = jwt.sign(
-                { username: user.username }, process.env.JWT_SECRET || "default", { expiresIn: '1h' });
+                { username: user.username, userId: user._id }, process.env.JWT_SECRET || "default", { expiresIn: '1h' });
             // res.setHeader("Authorization", `Bearer ${token}`);
             // res.setHeader('Access-Control-Expose-Headers', 'Authorization'); // optional if using `exposedHeaders` in cors
 
             const refreshToken = jwt.sign(
-                { username: user.username }, process.env.JWT_REFRESH_SECRET || "default", { expiresIn: '1h' });
+                { username: user.username, userId: user._id }, process.env.JWT_REFRESH_SECRET || "default", { expiresIn: '1h' });
             res.cookie("refreshToken", refreshToken, {
                 httpOnly: true,
                 secure: process.env.PRODUCTION === 'true', // Set to true in production
