@@ -1,5 +1,8 @@
 import { Server, Socket } from "socket.io";
+import { storeConversation } from "../components/chat/chatController";
+import { SendMessageType, UserType } from "../../types/types";
 export const users: any = {}; // { userId: socketId }
+
 
 
 export default function chatSocket(io: Server) {
@@ -7,21 +10,26 @@ export default function chatSocket(io: Server) {
         console.log("✅ New user connected:", socket.id);
 
         // Store the user when they join
-        socket.on("register", (userId) => {
-            socket.data.userId = userId; // ✅ store userId safely
-            users[userId] = socket.id;
+        socket.on("register", (userDetails: UserType) => {
+            console.log("User registered:", userDetails);
+            socket.data[userDetails.id] = userDetails; // ✅ store userId safely
+            users[userDetails.id] = {
+                ...userDetails, socketId: socket.id
+
+            }
             console.log(users);
         });
 
-        // Handle sending a message
-        socket.on("privateMessage", ({ toUserId, message }) => {
-            console.log("privateMessage", users);
-            const toSocketId = users[toUserId];
+        socket.on("privateMessage", (messageDetails: SendMessageType) => {
+            console.log("privateMessage", users, messageDetails);
+            storeConversation(socket.data.userId, messageDetails.reciverId, messageDetails.message);
+            const toSocketId = users[messageDetails.reciverId].socketId;
             if (toSocketId) {
-                console.log(` private message from ${socket.data.userId} to ${toUserId}: ${message}`);
+                console.log(` private message from ${socket.data.userId} to ${messageDetails.reciverId}: ${messageDetails.message}`);
                 io.to(toSocketId).emit("privateMessage", {
-                    fromUserId: socket.data.userId,
-                    message
+                    sender: socket.data.userId,
+                    content: messageDetails.message,
+                    senderId: socket.data.userId,
                 });
             }
         });

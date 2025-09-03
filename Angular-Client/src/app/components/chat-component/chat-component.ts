@@ -15,12 +15,12 @@ import { TokenService } from './../../services/token-service';
 export class ChatComponent {
   message: string = '';
   messages: any[] = [];
-  ownMessages: any[] = [];
 
   userName: string = '';
+  userId: string = '';
   isChatStarted: boolean = false;
-  onlineUsers: string[] = [];
-  selectedUser: string = '';
+  onlineUsers: UserObject[] = [];
+  selectedUser: UserObject = { username: '', id: '' };
 
   @ViewChild('messageSection') private messageSection: ElementRef | undefined;
 
@@ -30,10 +30,12 @@ export class ChatComponent {
 
   ngOnInit(): void {
     this.userName = this.tokenService.getUserNameFromToken() || '';
+    this.userId = this.tokenService.getUserIdFromToken() || '';
     this.connectChat();
     this.getOnlineUsers();
-    this.chatService.onMessage((msg: string) => {
-      console.log(msg);
+    this.chatService.onMessage((msg: ReceiveMessageObj) => {
+      msg.sender = msg.senderId;
+      console.log('New message received:', msg.sender, this.userId);
       this.messages.push(msg);
       this.scrollToBottom();
     });
@@ -42,23 +44,32 @@ export class ChatComponent {
     this.getOnlineUsers();
   }
 
-  selectUser(user: string): void {
+  selectUser(user: UserObject): void {
     this.selectedUser = user;
+    let messagePagination: MessagePagination = { page: 1, limit: 20 };
+    this.chatService.getOfflineMessages(user.id, messagePagination).subscribe({
+      next: (response: any) => {
+        this.messages = response.data || [];
+        console.log('Offline messages:', response);
+        this.scrollToBottom();
+      }, error: (error) => {
+        console.error('Error fetching offline messages:', error);
+      }
+    })
   }
 
   getOnlineUsers(): void {
     this.userService.getOnlineUsers().subscribe({
-      next: (response) => {
+      next: (response: UserObject[]) => {
         let onlineUsers = [];
         for (let key in response) {
-          if (this.userName !== key) {
-            onlineUsers.push(key);
-          }
+          // if (this.userName !== response[key].username) {
+          onlineUsers.push(response[key]);
+          // }
         }
         this.selectedUser = onlineUsers[0] || '';
 
         this.onlineUsers = onlineUsers;
-        console.log('Online users:', response);
       }, error: (error) => {
         console.error('Error fetching online users:', error);
       }
@@ -67,7 +78,9 @@ export class ChatComponent {
 
   sendMessage(): void {
     if (this.message.trim()) {
-      this.chatService.sendMessage(this.selectedUser, this.message);
+      // this.chatService.sendMessage(this.selectedUser, this.message);
+      let messageObj: SendMessageObj = { senderId: this.userId, reciverId: this.selectedUser.id, message: this.message.trim() };
+      this.chatService.sendMessage(messageObj);
       this.scrollToBottom();
       this.message = '';
     }
@@ -84,7 +97,8 @@ export class ChatComponent {
   connectChat(): void {
     if (this.userName.trim()) {
       this.isChatStarted = true;
-      this.chatService.registeruser(this.userName);
+      const userObj: UserObject = { username: this.userName, id: this.tokenService.getUserIdFromToken() || '' };
+      this.chatService.registeruser(userObj);
     }
   }
 }

@@ -1,10 +1,25 @@
 <h2>Custom Chat</h2>
-<p>Welcome, {{ userName }}!</p>
+<p>Welcome, {{ userName }} {{userId}}!</p>
 <div class="chat-container">
     <div class="chat-box">
-        <h3>Chating with {{selectedUser}}</h3>
+        <h3>Chating with {{selectedUser.username}}</h3>
         <div #messageSection class="messages-section">
-            <div class="message" *ngFor="let msg of messages">{{ msg.user }}: {{ msg.message }}</div>
+            <div class="message" *ngFor="let msg of messages">
+                <div id="msg-{{msg._id}}">
+                    @if(msg.sender == userId) {
+                    <div class="current-user">
+                        <div class="user-name">You:</div>
+                        <div> {{ msg.content }} </div>
+                    </div>
+                    } @else {
+                    <div>
+                        <div class="user-name">{{selectedUser.username}}:</div>
+                        <div> {{ msg.content }} </div>
+                    </div>
+                    }
+                </div>
+
+            </div>
         </div>
         <div class="message-input">
             <input [(ngModel)]="message" placeholder="Type a message" />
@@ -16,9 +31,8 @@
         <button (click)="refreshUserList()">Refresh User List</button>
         <div *ngIf="onlineUsers.length === 0">No users online</div>
         <div *ngFor="let user of onlineUsers">
-            <input type="radio" name="onlineUser" [(ngModel)]="selectedUser" [value]="user"
-                (click)="selectUser(user)" />
-            {{ user }}
+            <input type="radio" name="onlineUser" [value]="user" (click)="selectUser(user)" />
+            {{ user.username }}
         </div>
         <br />
     </div>

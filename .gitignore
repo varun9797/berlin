@@ -49,3 +49,5 @@ Angular-Client/typings
 # System files
 Angular-Client/.DS_Store
 Angular-Client/Thumbs.db
+
+/.env

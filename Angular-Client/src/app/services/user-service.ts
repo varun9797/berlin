@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { constants, statusCodes } from '../utils/const';
 import { TokenService } from './token-service';
 
@@ -15,8 +15,8 @@ export class UserService {
     return this.httpClient.post('http://localhost:3000/v1/user/register', userData)
   }
 
-  getOnlineUsers() {
-    return this.httpClient.get('http://localhost:3000/v1/user/onlineUsers', { withCredentials: true });
+  getOnlineUsers(): Observable<UserObject[]> {
+    return this.httpClient.get<UserObject[]>('http://localhost:3000/v1/user/onlineUsers', { withCredentials: true });
   }
 
   loginUser(loginData: UserLogin) {

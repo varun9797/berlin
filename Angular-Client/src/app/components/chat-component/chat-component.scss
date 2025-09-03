@@ -22,6 +22,14 @@
             max-height: 180px;
             margin-bottom: 10px;
 
+            .current-user {
+                text-align: right;
+            }
+
+            .user-name {
+                font-weight: bold;
+            }
+
             .message {
                 padding: 5px;
                 border-bottom: 1px solid #eee;
