@@ -2,18 +2,18 @@
     "version": 2,
     "builds": [
         {
-            "src": "Angular-Client/dist/Angular-client/**",
+            "src": "dist/Angular-client/**",
             "use": "@vercel/static"
         }
     ],
     "routes": [
         {
             "src": "/(.*\\.(?:js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|map))",
-            "dest": "Angular-Client/dist/Angular-client/browser/$1"
+            "dest": "dist/Angular-client/browser/$1"
         },
         {
             "src": "/(.*)",
-            "dest": "Angular-Client/dist/Angular-client/browser/index.html"
+            "dest": "dist/Angular-client/browser/index.html"
         }
     ]
 }
