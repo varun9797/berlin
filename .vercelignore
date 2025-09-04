@@ -1,1 +1,9 @@
 /package.json
+# Ignore backend folder
+Node-Server/
+
+# Ignore env files and IDE configs
+*.env
+*.log
+.vscode/
+.idea/

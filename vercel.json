@@ -4,17 +4,9 @@
         {
             "src": "Angular-Client/dist/Angular-client/**",
             "use": "@vercel/static"
-        },
-        {
-            "src": "Node-Server/**/*.js",
-            "use": "@vercel/node"
         }
     ],
     "routes": [
-        {
-            "src": "/Node-Server/(.*)",
-            "dest": "/Node-Server/$1"
-        },
         {
             "src": "/(.*\\.(?:js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|map))",
             "dest": "Angular-Client/dist/Angular-client/browser/$1"
