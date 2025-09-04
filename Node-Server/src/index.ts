@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { connectToMongo } from './configs/mongoConnection';
 import express from 'express';
 import chatSocket from "./v1/services/chatService";
