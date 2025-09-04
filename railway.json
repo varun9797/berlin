@@ -1,3 +1,6 @@
 {
-    "root": "Node-Server"
+    "build": {
+        "root": "Node-Server"
+    },
+    "start": "npm install && npm run build && npm start"
 }
