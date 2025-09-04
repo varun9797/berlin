@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
-import { environment } from '../../enviornment/environment';
+import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -29,7 +29,7 @@ export class ChatServices {
   }
 
   getOfflineMessages(requestedUserIds: string[], messagePagination: MessagePagination): Observable<any> {
-    return this.http.post('http://localhost:3000/api/v1/chat/conversations', { userIds: requestedUserIds, paginationDetails: messagePagination }
+    return this.http.post(`${environment.apiUrl}/api/v1/chat/conversations`, { userIds: requestedUserIds, paginationDetails: messagePagination }
       , { withCredentials: true }
     );
   }

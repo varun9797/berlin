@@ -51,3 +51,4 @@ Angular-Client/.DS_Store
 Angular-Client/Thumbs.db
 
 /.env
+.vercel

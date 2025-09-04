@@ -7,7 +7,7 @@ export const ShcemaConstants = {
 export const JWT_CONSTANTS = {
     AUTHORIZATION: 'Authorization',
     BEARER: 'Bearer',
-    SECRET_KEY_TOKEN: process.env.SECRET_KEY_TOKEN || 'default',
+    SECRET_KEY_TOKEN: process.env.JWT_SECRET || 'default',
 }
 
 export const HTTP_STATUS_CODES = {
