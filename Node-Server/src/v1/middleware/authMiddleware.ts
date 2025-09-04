@@ -8,7 +8,7 @@ import { AuthRequest } from '../../types/types';
 
 
 function verifyToken(req: AuthRequest, res: Response, next: NextFunction): void {
-    const token = req.header(JWT_CONSTANTS.AUTHORIZATION);
+    const token = req.header(JWT_CONSTANTS.AUTHORIZATION)?.replace('Bearer ', '');
     if (!token) {
         res.status(401).json({ error: 'Access denied' });
         return;

@@ -11,3 +11,8 @@ export const statusCodes = {
     NOT_FOUND: 404,
     INTERNAL_SERVER_ERROR: 500
 }
+
+export const messagePaginationConstants = {
+    LIMIT: 10,
+    SKIP: 1
+}

@@ -1,4 +1,8 @@
 import { Router } from "express";
 const router = Router();
 
-export { router as chatRouter };
+import { getConversationsApi } from "./chatController";
+
+router.post('/conversations', getConversationsApi);
+
+export default router;

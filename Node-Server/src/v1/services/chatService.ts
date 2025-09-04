@@ -1,6 +1,6 @@
 import { Server, Socket } from "socket.io";
-import { storeConversation } from "../components/chat/chatController";
-import { SendMessageType, UserType } from "../../types/types";
+import { getOfflineConversation, storeConversation } from "../components/chat/chatController";
+import { SendMessageType, UserType, PaginationDetailsType } from "../../types/types";
 export const users: any = {}; // { userId: socketId }
 
 
@@ -21,11 +21,11 @@ export default function chatSocket(io: Server) {
         });
 
         socket.on("privateMessage", (messageDetails: SendMessageType) => {
-            // console.log("privateMessage", users, messageDetails);
+            console.log("privateMessage", messageDetails.reciverId, messageDetails.reciverId);
             const toSocketId = users[messageDetails.reciverId]?.socketId;
             if (toSocketId) {
-                storeConversation(socket.data.userId, messageDetails.reciverId, messageDetails.message);
-                console.log(` private message from ${socket.data.senderId} to ${messageDetails.reciverId}: ${messageDetails.message}`);
+                storeConversation(messageDetails.senderId, messageDetails.reciverId, messageDetails.message);
+                // console.log(` private message from ${socket.data.senderId} to ${messageDetails.reciverId}: ${messageDetails.message}`);
                 io.to(toSocketId).emit("privateMessage", {
                     senderName: socket.data[messageDetails.senderId]?.username,
                     content: messageDetails.message,
@@ -41,6 +41,10 @@ export default function chatSocket(io: Server) {
                     senderId: socket.data[messageDetails.senderId]?.userId,
                 });
             }
+
+            let paginationDetails: PaginationDetailsType = { page: 1, limit: 10 };
+
+            getOfflineConversation([messageDetails.reciverId, messageDetails.senderId], paginationDetails)
         });
 
 

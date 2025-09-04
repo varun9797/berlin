@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ChatServices } from '../../services/chat-services';
 import { UserService } from '../../services/user-service';
 import { TokenService } from './../../services/token-service';
+import { messagePaginationConstants } from '../../utils/const';
 
 
 @Component({
@@ -46,8 +47,8 @@ export class ChatComponent {
 
   selectUser(user: UserObject): void {
     this.selectedUser = user;
-    let messagePagination: MessagePagination = { page: 1, limit: 20 };
-    this.chatService.getOfflineMessages(user.userId, messagePagination).subscribe({
+    let messagePagination: MessagePagination = { page: messagePaginationConstants.SKIP, limit: messagePaginationConstants.LIMIT };
+    this.chatService.getOfflineMessages([user.userId], messagePagination).subscribe({
       next: (response: any) => {
         this.messages = response.data || [];
         console.log('Offline messages:', response);

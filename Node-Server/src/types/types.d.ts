@@ -14,3 +14,8 @@ export interface UserType {
 export interface AuthRequest extends Request {
     userId?: string;
 }
+
+export interface PaginationDetailsType {
+    page: number;
+    limit: number;
+}

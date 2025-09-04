@@ -6,7 +6,7 @@
         <div #messageSection class="messages-section">
             <div class="message" *ngFor="let msg of messages">
                 <div id="msg-{{msg._id}}">
-                    @if(msg.sender == userId) {
+                    @if(msg.senderId == userId) {
                     <div class="current-user">
                         <div class="user-name">You:</div>
                         <div> {{ msg.content }} </div>
@@ -31,7 +31,8 @@
         <button (click)="refreshUserList()">Refresh User List</button>
         <div *ngIf="onlineUsers.length === 0">No users online</div>
         <div *ngFor="let user of onlineUsers">
-            <input type="radio" name="onlineUser" [value]="user" (click)="selectUser(user)" />
+            <input type="radio" name="onlineUser" [(ngModel)]="selectedUser.username" [value]="selectedUser.username"
+                (click)="selectUser(user)" />
             {{ user.username }}
         </div>
         <br />

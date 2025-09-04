@@ -28,8 +28,8 @@ export class ChatServices {
     this.socket.on('privateMessage', callback);
   }
 
-  getOfflineMessages(requestedUserId: string, messagePagination: MessagePagination): Observable<any> {
-    return this.http.post('http://localhost:3000/v1/api/chat/conversations', { requestedUserId: requestedUserId, messagePagination }
+  getOfflineMessages(requestedUserIds: string[], messagePagination: MessagePagination): Observable<any> {
+    return this.http.post('http://localhost:3000/api/v1/chat/conversations', { userIds: requestedUserIds, paginationDetails: messagePagination }
       , { withCredentials: true }
     );
   }
