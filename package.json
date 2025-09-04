@@ -4,5 +4,8 @@
     "workspaces": [
         "Angular-Client",
         "Node-Server"
-    ]
+    ],
+    "scripts": {
+        "start": "cd Node-Server && npm install && npm run build && npm start"
+    }
 }
