@@ -1,0 +1,8 @@
+{
+    "name": "fullstack-app",
+    "private": true,
+    "workspaces": [
+        "Angular-Client",
+        "Node-Server"
+    ]
+}
