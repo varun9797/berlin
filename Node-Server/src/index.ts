@@ -43,9 +43,15 @@ connectToMongo();
 // Socket.io setup
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:4200", // Angular dev server
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
         methods: ["GET", "POST"],
-        credentials: true                 // allow cookies / auth headers
+        credentials: true
     }
 });
 chatSocket(io);
