@@ -9,12 +9,26 @@ import privateRoutes from "./v1/routes/privateRoutes";
 import publicRoutes from './v1/routes/publicRoutes';
 
 const app = express();
-app.use(cors({
-    origin: ["http://localhost:4200", "https://angular-client-five.vercel.app"], // Angular dev server
-    methods: ["GET", "POST"],
-    credentials: true,                 // allow cookies / auth headers
-    exposedHeaders: ['Authorization']
-}));
+const allowedOrigins = [
+    "http://localhost:4200",
+    "https://angular-client-five.vercel.app"
+];
+
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            // allow requests with no origin (like mobile apps, curl, etc.)
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        credentials: true,
+        exposedHeaders: ["Authorization"],
+    })
+);
 app.use(express.json());
 
 // Create HTTP server
