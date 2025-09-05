@@ -10,7 +10,7 @@ import publicRoutes from './v1/routes/publicRoutes';
 
 const app = express();
 app.use(cors({
-    origin: ["http://localhost:4200", "https://berlin-production.up.railway.app"], // Angular dev server
+    origin: ["http://localhost:4200", "https://angular-client-five.vercel.app"], // Angular dev server
     methods: ["GET", "POST"],
     credentials: true,                 // allow cookies / auth headers
     exposedHeaders: ['Authorization']
