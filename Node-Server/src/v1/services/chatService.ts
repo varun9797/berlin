@@ -1,44 +1,46 @@
 import { Server, Socket } from "socket.io";
 import { getOfflineConversation, storeConversation } from "../components/chat/chatController";
 import { SendMessageType, UserType, PaginationDetailsType } from "../../types/types";
-export const users: any = {}; // { userId: socketId }
+export const onlineUsers: any = {}; // { userId: socketId }
 
 
 
 export default function chatSocket(io: Server) {
     io.on("connection", (socket: Socket) => {
-        console.log("✅ New user connected:", socket.id);
+        const userId = socket.handshake.query.userId as string;
+
+        // const userId = Object.keys(onlineUsers).filter(key => onlineUsers[key].socketId === socket.id);
 
         // Store the user when they join
         socket.on("register", (userDetails: UserType) => {
             console.log("User registered:", userDetails);
-            socket.data[userDetails.userId] = userDetails; // ✅ store userId safely
-            users[userDetails.userId] = {
+            onlineUsers[userDetails.userId] = {
                 ...userDetails, socketId: socket.id
 
             }
-            console.log(users);
+            setTimeout(() => {
+                io.emit('online-users', Object.values(onlineUsers));
+            }, 0);
+            console.log(onlineUsers);
         });
 
         socket.on("privateMessage", (messageDetails: SendMessageType) => {
             console.log("privateMessage", messageDetails.reciverId, messageDetails.reciverId);
-            const toSocketId = users[messageDetails.reciverId]?.socketId;
+            const toSocketId = onlineUsers[messageDetails.reciverId]?.socketId;
             if (toSocketId) {
                 storeConversation(messageDetails.senderId, messageDetails.reciverId, messageDetails.message);
-                // console.log(` private message from ${socket.data.senderId} to ${messageDetails.reciverId}: ${messageDetails.message}`);
                 io.to(toSocketId).emit("privateMessage", {
-                    senderName: socket.data[messageDetails.senderId]?.username,
+                    senderName: onlineUsers[messageDetails.senderId]?.username,
                     content: messageDetails.message,
-                    senderId: socket.data[messageDetails.senderId]?.userId,
+                    senderId: onlineUsers[messageDetails.senderId]?.userId,
                 });
             }
-            const toSenderSocketId = users[messageDetails.senderId]?.socketId;
+            const toSenderSocketId = onlineUsers[messageDetails.senderId]?.socketId;
             if (toSenderSocketId) {
-                console.log(` private message from ${JSON.stringify(socket.data[messageDetails.senderId])} to ${messageDetails.reciverId}: ${messageDetails.message}`);
                 io.to(toSenderSocketId).emit("privateMessage", {
-                    senderName: socket.data[messageDetails.senderId]?.username,
+                    senderName: onlineUsers[messageDetails.senderId]?.username,
                     content: messageDetails.message,
-                    senderId: socket.data[messageDetails.senderId]?.userId,
+                    senderId: onlineUsers[messageDetails.senderId]?.userId,
                 });
             }
 
@@ -48,13 +50,16 @@ export default function chatSocket(io: Server) {
         });
 
 
-        socket.on("chatMessage", (msg: string) => {
-            console.log("💬 Message received:", msg);
-            io.emit("chatMessage", msg); // broadcast to all
-        });
+        // socket.on("chatMessage", (msg: string) => {
+        //     console.log("💬 Message received:", msg);
+        //     io.emit("chatMessage", msg); // broadcast to all
+        // });
 
         socket.on("disconnect", () => {
-            console.log("❌ User disconnected:", socket.id);
+            // console.log("❌ User disconnected:", socket.id, onlineUsers, userId, "***");
+            delete onlineUsers[userId];
+            // console.log(userId, 'disconnected', onlineUsers);
+            io.emit('online-users', Object.values(onlineUsers));
         });
     });
 }

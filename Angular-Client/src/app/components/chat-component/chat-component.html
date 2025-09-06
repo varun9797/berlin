@@ -1,4 +1,4 @@
-<h2>Custom Chat</h2>
+<h2>Global Chat</h2>
 <p>Welcome, {{ userName }} {{userId}}!</p>
 <div class="chat-container" [ngSwitch]="currentPage">
     <div *ngSwitchCase="chatPages.CHAT">
@@ -10,7 +10,8 @@
     <ng-template #chatContainer>
         <div class="chat-box">
             <button (click)="setCurrentPage(chatPages.LIST)">Back to list</button>
-            <h3>Chating with {{selectedUser.username}}</h3>
+            <h3>Chating with {{selectedUser.username}} {{ selectedUser.isOnline ? '🟢 Online' : '🔴 Offline' }}</h3>
+
             <div #messageSection class="messages-section">
                 <div class="message" *ngFor="let msg of messages">
                     <div id="msg-{{msg._id}}">

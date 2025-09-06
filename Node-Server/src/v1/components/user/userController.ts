@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { UserModel } from "./userModel";
 import jwt from "jsonwebtoken";
 import { httpStatusCodes } from "../../utils/httpStatusCodes";
-import { users } from "../../services/chatService";
+import { onlineUsers } from "../../services/chatService";
 
 export const userRegistration = async (req: Request, res: Response) => {
     try {
@@ -24,8 +24,8 @@ export const getUserProfile = async (req: Request, res: Response) => {
 }
 
 export const getOnlineUsers = async (req: Request, res: Response) => {
-    const onlineUsers = users
-    res.status(httpStatusCodes.OK).send(onlineUsers);
+    const users = onlineUsers
+    res.status(httpStatusCodes.OK).send(users);
 }
 
 export const userLogin = async (req: Request, res: Response) => {

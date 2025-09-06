@@ -13,7 +13,10 @@ export class ChatServices {
   private socket!: Socket;
 
   constructor(private http: HttpClient) {
-    this.socket = io(environment.socketUrl);
+  }
+
+  connect(userId: string): void {
+    this.socket = io(environment.socketUrl, { query: { userId } });
   }
 
   sendMessage(messageObj: SendMessageObj): void {
@@ -32,6 +35,21 @@ export class ChatServices {
     return this.http.post(`${environment.apiUrl}/api/v1/chat/conversations`, { userIds: requestedUserIds, paginationDetails: messagePagination }
       , { withCredentials: true }
     );
+  }
+
+  disconnect(): void {
+    if (this.socket) {
+      this.socket.disconnect();
+    }
+  }
+
+  getOnlineUsers(): Observable<UserObject[]> {
+    return new Observable(observer => {
+      this.socket.on('online-users', (users: UserObject[]) => {
+        console.log('Online users from socket:', users);
+        observer.next(users)
+      });
+    });
   }
 
 }

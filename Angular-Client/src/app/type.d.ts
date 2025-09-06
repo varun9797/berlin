@@ -23,6 +23,7 @@ type ReceiveMessageObj = {
 type UserObject = {
     username: string;
     userId: string;
+    isOnline?: boolean;
 }
 
 type UserObject = {

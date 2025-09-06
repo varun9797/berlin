@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ChatServices } from '../../services/chat-services';
 import { UserService } from '../../services/user-service';
@@ -15,10 +15,11 @@ type ChatPage = typeof chatPages[keyof typeof chatPages];
   templateUrl: './chat-component.html',
   styleUrl: './chat-component.scss'
 })
-export class ChatComponent {
+export class ChatComponent implements OnInit, OnDestroy {
   message: string = '';
   messages: any[] = [];
   chatPages = chatPages;
+  onlineUsersIdList: string[] = [];
 
   userName: string = '';
   userId: string = '';
@@ -32,22 +33,43 @@ export class ChatComponent {
 
   constructor(private chatService: ChatServices,
     private userService: UserService,
-    private tokenService: TokenService) { };
+    private tokenService: TokenService) { }
+
 
   ngOnInit(): void {
+    this.chatService.connect(this.tokenService.getUserIdFromToken() || '');
     this.userName = this.tokenService.getUserNameFromToken() || '';
     this.userId = this.tokenService.getUserIdFromToken() || '';
     this.connectChat();
-    this.getOnlineUsers();
+    this.setIsUserOnline();
+    // this.getOnlineUsers();
     this.chatService.onMessage((msg: ReceiveMessageObj) => {
       msg.sender = msg.senderId;
-      console.log('New message received:', msg.senderId, this.userId);
+      // console.log('New message received:', msg.senderId, this.userId);
       this.messages.push(msg);
       this.scrollToBottom();
     });
   }
-  refreshUserList(): void {
-    this.getOnlineUsers();
+
+
+  setIsUserOnline(): void {
+    this.chatService.getOnlineUsers().subscribe(onlineUsers => {
+      console.log('Online users3333:', onlineUsers, this.selectedUser.userId);
+      this.onlineUsers = onlineUsers;
+      if (this.selectedUser) {
+        if (this.isUserOnline()) {
+          this.selectedUser.isOnline = true;
+        } else {
+          this.selectedUser.isOnline = false;
+        }
+      }
+    });
+  }
+
+  isUserOnline(): boolean {
+    return this.onlineUsers.some(user => {
+      return user.userId == this.selectedUser.userId
+    })
   }
 
   setCurrentPage(page: ChatPage): void {
@@ -57,8 +79,14 @@ export class ChatComponent {
 
   onUserSelected(user: UserObject): void {
     this.setCurrentPage(chatPages.CHAT);
-    console.log('User selected in parent component:', user);
     this.selectedUser = user;
+    // this.onlineUsersIdList.includes(user.userId) ? this.selectedUser.isOnline = true : this.selectedUser.isOnline = false;
+    if (this.isUserOnline()) {
+      this.selectedUser.isOnline = true;
+    } else {
+      this.selectedUser.isOnline = false;
+    }
+    // this.isUserOnline();
     let messagePagination: MessagePagination = { page: messagePaginationConstants.SKIP, limit: messagePaginationConstants.LIMIT };
     this.chatService.getOfflineMessages([user.userId], messagePagination).subscribe({
       next: (response: any) => {
@@ -67,25 +95,6 @@ export class ChatComponent {
         this.scrollToBottom();
       }, error: (error) => {
         console.error('Error fetching offline messages:', error);
-      }
-    })
-  }
-
-
-  getOnlineUsers(): void {
-    this.userService.getOnlineUsers().subscribe({
-      next: (response: UserObject[]) => {
-        let onlineUsers = [];
-        for (let key in response) {
-          if (this.userName !== response[key].username) {
-            onlineUsers.push(response[key]);
-          }
-        }
-        // this.selectedUser = onlineUsers[0] || '';
-
-        this.onlineUsers = onlineUsers;
-      }, error: (error) => {
-        console.error('Error fetching online users:', error);
       }
     })
   }
@@ -114,5 +123,9 @@ export class ChatComponent {
       const userObj: UserObject = { username: this.userName, userId: this.tokenService.getUserIdFromToken() || '' };
       this.chatService.registeruser(userObj);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.chatService.disconnect();
   }
 }

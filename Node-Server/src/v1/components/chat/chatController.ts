@@ -75,7 +75,7 @@ export const getOfflineConversation = async (userIds: string[], paginationDetail
 
 
 export const getConversationsApi = async (req: AuthRequest, res: Response): Promise<void> => {
-    console.log('getConversationsApi called with body:', req.body);
+    // console.log('getConversationsApi called with body:', req.body);
     const userIds: string[] = req.body.userIds || [];
     let userIdsArr: string[] = [];
     if (req.userId) {
@@ -89,7 +89,7 @@ export const getConversationsApi = async (req: AuthRequest, res: Response): Prom
 
     try {
         let conversationResponse = await getOfflineConversation(userIds, paginationDetails);
-        console.log('Conversations found:', conversationResponse);
+        // console.log('Conversations found:', conversationResponse);
         res.status(httpStatusCodes.OK).json({ data: conversationResponse });
     } catch (error) {
         res.status(httpStatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Internal server error" });
