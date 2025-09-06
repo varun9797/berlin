@@ -51,7 +51,7 @@ export class LoginComponent {
   handleHttpError(error: HttpErrorResponse): void {
     console.error('HTTP Error:', error);
     if (error.status === 401 || error.status === 404) {
-      alert('Invalid credentials. Please try again.');
+      alert('Invalid credentials');
     } else if (error.status === 0) {
       alert('Network error. Please check your connection and try again.');
     }

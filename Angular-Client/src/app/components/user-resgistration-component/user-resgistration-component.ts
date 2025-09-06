@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user-service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-user-resgistration-component',
@@ -21,6 +22,8 @@ export class UserResgistrationComponent {
   constructor(private router: Router, private userService: UserService) { }
 
   onSubmit(): void {
+    this.markAllFieldsAsTouched(this.registrationForm);
+
     if (this.registrationForm.invalid) {
       return;
     };
@@ -36,6 +39,7 @@ export class UserResgistrationComponent {
           this.router.navigate(['/login']);
         },
         error: (error) => {
+          this.handleHttpError(error);
           console.error('Error registering user', error);
         }
       });
@@ -48,4 +52,26 @@ export class UserResgistrationComponent {
   goToLoginPage(): void {
     this.router.navigate(['/login']);
   }
+
+  handleHttpError(error: HttpErrorResponse): void {
+    console.error('HTTP Error:', error);
+    if (error.status === 401 || error.status === 404) {
+      alert('Invalid credentials. Please try again.');
+    } else if (error.status === 0) {
+      alert('Network error. Please check your connection and try again.');
+    }
+  }
+
+  markAllFieldsAsTouched(formGroup: FormGroup) {
+    Object.keys(formGroup.controls).forEach(field => {
+      const control = formGroup.get(field);
+      if (control instanceof FormControl) {
+        control.markAsTouched({ onlySelf: true });
+      } else if (control instanceof FormGroup) {
+        this.markAllFieldsAsTouched(control);
+      }
+    });
+  }
+
+
 }
