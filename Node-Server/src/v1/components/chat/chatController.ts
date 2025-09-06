@@ -80,6 +80,7 @@ export const getConversationsApi = async (req: AuthRequest, res: Response): Prom
     let userIdsArr: string[] = [];
     if (req.userId) {
         userIdsArr = [req.userId, ...userIds];
+        res.status(httpStatusCodes.FORBIDDEN).json({ message: "User id not found in token" });
     } else {
         res.status(httpStatusCodes.FORBIDDEN).json({ message: "Something went wrong" });
     }
