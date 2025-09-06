@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user-service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-login-component',
@@ -21,6 +22,7 @@ export class LoginComponent {
   }
 
   onSubmit(): void {
+    this.markAllFieldsAsTouched(this.loginForm);
     if (this.loginForm.valid) {
       console.log(this.loginForm.value);
       const loginData: UserLogin = {
@@ -31,8 +33,9 @@ export class LoginComponent {
         next: (response) => {
           console.log('Login successful', response);
           this.router.navigate(['/chat']);
-        }, error: (error) => {
+        }, error: (error: HttpErrorResponse) => {
           console.error('Error during login', error);
+          this.handleHttpError(error);
         }
       })
     } else {
@@ -43,5 +46,23 @@ export class LoginComponent {
   goToSignUpPage(): void {
     console.log("Go to Sign up page");
     this.router.navigate(['/register']);
+  }
+
+  handleHttpError(error: HttpErrorResponse): void {
+    console.error('HTTP Error:', error);
+    if (error.status === 401 || error.status === 404) {
+      alert('Invalid credentials. Please try again.');
+    } else if (error.status === 0) {
+      alert('Network error. Please check your connection and try again.');
+    }
+  }
+
+  markAllFieldsAsTouched(formGroup: FormGroup) {
+    Object.values(formGroup.controls).forEach(control => {
+      control.markAsTouched();
+      if ((control as FormGroup).controls) {
+        this.markAllFieldsAsTouched(control as FormGroup);
+      }
+    });
   }
 }

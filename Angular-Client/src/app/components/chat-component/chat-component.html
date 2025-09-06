@@ -1,41 +1,60 @@
 <h2>Custom Chat</h2>
 <p>Welcome, {{ userName }} {{userId}}!</p>
-<div class="chat-container">
-    <div class="chat-box">
-        <h3>Chating with {{selectedUser.username}}</h3>
-        <div #messageSection class="messages-section">
-            <div class="message" *ngFor="let msg of messages">
-                <div id="msg-{{msg._id}}">
-                    @if(msg.senderId == userId) {
-                    <div class="current-user">
-                        <div class="user-name">You:</div>
-                        <div> {{ msg.content }} </div>
+<div class="chat-container" [ngSwitch]="currentPage">
+    <div *ngSwitchCase="chatPages.CHAT">
+        <div *ngTemplateOutlet="chatContainer"></div>
+    </div>
+    <div *ngSwitchDefault>
+        <div *ngTemplateOutlet="listContainer"></div>
+    </div>
+    <ng-template #chatContainer>
+        <div class="chat-box">
+            <button (click)="setCurrentPage(chatPages.LIST)">Back to list</button>
+            <h3>Chating with {{selectedUser.username}}</h3>
+            <div #messageSection class="messages-section">
+                <div class="message" *ngFor="let msg of messages">
+                    <div id="msg-{{msg._id}}">
+                        @if(msg.senderId == userId) {
+                        <div class="current-user">
+                            <div class="user-name">You:</div>
+                            <div> {{ msg.content }} </div>
+                        </div>
+                        } @else {
+                        <div>
+                            <div class="user-name">{{selectedUser.username}}:</div>
+                            <div> {{ msg.content }} </div>
+                        </div>
+                        }
                     </div>
-                    } @else {
-                    <div>
-                        <div class="user-name">{{selectedUser.username}}:</div>
-                        <div> {{ msg.content }} </div>
-                    </div>
-                    }
-                </div>
 
+                </div>
+            </div>
+            <div class="message-input">
+                <input [(ngModel)]="message" placeholder="Type a message" />
+                <button (click)="sendMessage()">Send</button>
             </div>
         </div>
-        <div class="message-input">
-            <input [(ngModel)]="message" placeholder="Type a message" />
-            <button (click)="sendMessage()">Send</button>
-        </div>
-    </div>
-    <div class="online-users">
+    </ng-template>
+    <ng-template #listContainer>
+        <app-list-component [userName]="userName" (userSelected)="onUserSelected($event)"></app-list-component>
+    </ng-template>
+
+
+
+
+
+
+
+
+    <!-- <div class="online-users">
         <h3>Online Users</h3>
         <button (click)="refreshUserList()">Refresh User List</button>
         <div *ngIf="onlineUsers.length === 0">No users online</div>
         <div *ngFor="let user of onlineUsers">
-            <input type="radio" name="onlineUser" [(ngModel)]="selectedUser.username" [value]="selectedUser.username"
-                (click)="selectUser(user)" />
+            <input type="radio" name="onlineUser" [value]="selectedUser.username" (click)="selectUser(user)" />
             {{ user.username }}
         </div>
         <br />
-    </div>
+    </div> -->
 </div>
 <!-- } -->

@@ -16,3 +16,8 @@ export const messagePaginationConstants = {
     LIMIT: 10,
     SKIP: 1
 }
+
+export const chatPages = {
+    CHAT: 'chat',
+    LIST: 'list'
+}

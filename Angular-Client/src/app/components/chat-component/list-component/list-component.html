@@ -1,0 +1,10 @@
+<div class="online-users">
+    <h3>Online Users</h3>
+    <button (click)="refreshUserList()">Refresh User List</button>
+    <div *ngIf="onlineUsers.length === 0">No users online</div>
+    <div *ngFor="let user of onlineUsers">
+        <input type="radio" name="onlineUser" [value]="selectedUser.username" (click)="onSelectUser(user)" />
+        {{ user.username }}
+    </div>
+    <br />
+</div>

@@ -12,6 +12,10 @@
     <div class="form-field">
         <label for="password">Password:</label>
         <input type="password" id="password" formControlName="password">
+        @if(loginForm.controls['password'].invalid && (loginForm.controls['password'].dirty ||
+        loginForm.controls['password'].touched)) {
+        <div class="form-error">Username is invalid.</div>
+        }
     </div>
     <button class="submit-btn" type="submit">Login</button>
 </form>

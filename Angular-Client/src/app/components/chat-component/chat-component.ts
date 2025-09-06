@@ -4,24 +4,29 @@ import { FormsModule } from '@angular/forms';
 import { ChatServices } from '../../services/chat-services';
 import { UserService } from '../../services/user-service';
 import { TokenService } from './../../services/token-service';
-import { messagePaginationConstants } from '../../utils/const';
+import { chatPages, messagePaginationConstants } from '../../utils/const';
+import { ListComponent } from './list-component/list-component';
 
+type ChatPage = typeof chatPages[keyof typeof chatPages];
 
 @Component({
   selector: 'app-chat-component',
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, ListComponent],
   templateUrl: './chat-component.html',
   styleUrl: './chat-component.scss'
 })
 export class ChatComponent {
   message: string = '';
   messages: any[] = [];
+  chatPages = chatPages;
 
   userName: string = '';
   userId: string = '';
   isChatStarted: boolean = false;
   onlineUsers: UserObject[] = [];
   selectedUser: UserObject = { username: '', userId: '' };
+
+  currentPage: ChatPage = chatPages.LIST;
 
   @ViewChild('messageSection') private messageSection: ElementRef | undefined;
 
@@ -45,7 +50,14 @@ export class ChatComponent {
     this.getOnlineUsers();
   }
 
-  selectUser(user: UserObject): void {
+  setCurrentPage(page: ChatPage): void {
+    this.currentPage = page;
+    this.selectedUser = { username: '', userId: '' };
+  }
+
+  onUserSelected(user: UserObject): void {
+    this.setCurrentPage(chatPages.CHAT);
+    console.log('User selected in parent component:', user);
     this.selectedUser = user;
     let messagePagination: MessagePagination = { page: messagePaginationConstants.SKIP, limit: messagePaginationConstants.LIMIT };
     this.chatService.getOfflineMessages([user.userId], messagePagination).subscribe({
@@ -59,6 +71,7 @@ export class ChatComponent {
     })
   }
 
+
   getOnlineUsers(): void {
     this.userService.getOnlineUsers().subscribe({
       next: (response: UserObject[]) => {
@@ -68,7 +81,7 @@ export class ChatComponent {
             onlineUsers.push(response[key]);
           }
         }
-        this.selectedUser = onlineUsers[0] || '';
+        // this.selectedUser = onlineUsers[0] || '';
 
         this.onlineUsers = onlineUsers;
       }, error: (error) => {
