@@ -1,1 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
+input,
+textarea,
+select {
+    font-size: 16px;
+    transform: scale(0.99);
+}
