@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { TokenService } from './token-service';
 
 
 @Injectable({
@@ -12,11 +13,15 @@ export class ChatServices {
 
   private socket!: Socket;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private tokenService: TokenService) {
   }
 
   connect(userId: string): void {
-    this.socket = io(environment.socketUrl, { query: { userId } });
+    this.socket = io(environment.socketUrl, {
+      query: { userId }, auth: {
+        token: this.tokenService.getToken()
+      }
+    });
   }
 
   sendMessage(messageObj: SendMessageObj): void {

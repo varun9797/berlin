@@ -1,11 +1,30 @@
 import { Server, Socket } from "socket.io";
 import { getOfflineConversation, storeConversation } from "../components/chat/chatController";
-import { SendMessageType, UserType, PaginationDetailsType } from "../../types/types";
+import { SendMessageType, UserType, PaginationDetailsType, AuthenticatedSocket } from "../../types/types";
 export const onlineUsers: any = {}; // { userId: socketId }
-
+import jwt, { JwtPayload } from "jsonwebtoken"
+import { JWT_CONSTANTS } from "../utils/const";
 
 
 export default function chatSocket(io: Server) {
+
+    io.use((socket: AuthenticatedSocket, next) => {
+        const token: string = socket.handshake.auth.token?.replace('Bearer ', '');
+        if (!token) {
+            return next(new Error("Authentication error"));
+        }
+
+        jwt.verify(token, JWT_CONSTANTS.SECRET_KEY_TOKEN, (err, decoded) => {
+            if (err) {
+                return next(new Error("Authentication error"));
+            }
+            socket.userId = (decoded as JwtPayload).userId; // attach user info to socket
+            next();
+            return;
+        });
+
+    });
+
     io.on("connection", (socket: Socket) => {
         const userId = socket.handshake.query.userId as string;
 

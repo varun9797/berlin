@@ -12,6 +12,7 @@ type SendMessageObj = {
     senderId: string;
     reciverId: string;
     message: string;
+    ping?: boolean;
 }
 
 type ReceiveMessageObj = {

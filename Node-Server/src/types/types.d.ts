@@ -1,4 +1,6 @@
 import { Request } from "express";
+import { Socket } from "socket.io";
+
 
 export interface SendMessageType {
     senderId: string;
@@ -18,4 +20,8 @@ export interface AuthRequest extends Request {
 export interface PaginationDetailsType {
     page: number;
     limit: number;
+}
+
+export interface AuthenticatedSocket extends Socket {
+    userId?: string;
 }

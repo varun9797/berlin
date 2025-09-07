@@ -6,6 +6,9 @@ import { UserService } from '../../services/user-service';
 import { TokenService } from './../../services/token-service';
 import { chatPages, messagePaginationConstants } from '../../utils/const';
 import { ListComponent } from './list-component/list-component';
+import { TabVisibilityService } from '../../services/tab-visibility-service';
+import { Subscription } from 'rxjs';
+
 
 type ChatPage = typeof chatPages[keyof typeof chatPages];
 
@@ -28,12 +31,14 @@ export class ChatComponent implements OnInit, OnDestroy {
   selectedUser: UserObject = { username: '', userId: '' };
 
   currentPage: ChatPage = chatPages.LIST;
+  tabVisibilityServiceSubscription: Subscription | undefined;
 
   @ViewChild('messageSection') private messageSection: ElementRef | undefined;
 
   constructor(private chatService: ChatServices,
     private userService: UserService,
-    private tokenService: TokenService) { }
+    private tokenService: TokenService,
+    private tabVisibilityService: TabVisibilityService) { }
 
 
   ngOnInit(): void {
@@ -48,6 +53,12 @@ export class ChatComponent implements OnInit, OnDestroy {
       // console.log('New message received:', msg.senderId, this.userId);
       this.messages.push(msg);
       this.scrollToBottom();
+    });
+    this.tabVisibilityServiceSubscription = this.tabVisibilityService.onVisibilityChange().subscribe((visible) => {
+      // this.isActive = visible;
+      console.log("is active", visible);
+
+
     });
   }
 
@@ -127,5 +138,6 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.chatService.disconnect();
+    this.tabVisibilityServiceSubscription?.unsubscribe();
   }
 }
