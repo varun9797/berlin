@@ -5,7 +5,7 @@
     <div *ngFor="let user of onlineUsers">
         <div class="user-name" (click)="onSelectUser(user)">
             <input type="radio" name="onlineUser" [value]="selectedUser.username" />
-            {{ user.username }}
+            {{ user.username }} {{user.newMessageCount ? ' (' + user.newMessageCount + ' new messages)' : ''}}
         </div>
     </div>
     <br />

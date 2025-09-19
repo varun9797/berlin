@@ -14,7 +14,7 @@ export class ListComponent {
   onlineUsers: UserObject[] = [];
   @Input() selectedUser: UserObject = { username: '', userId: '' };
   @Output() userSelected = new EventEmitter<UserObject>();
-  @Input() userName: string = '';
+  @Input() currentUserName: string = '';
 
   constructor(public userService: UserService,
     public chatServices: ChatServices,
@@ -23,6 +23,7 @@ export class ListComponent {
   ngOnInit(): void {
     this.setIsUserOnline();
     this.getOnlineUsersFromApi();
+    this.onMessageListener();
   }
 
   refreshUserList(): void {
@@ -31,6 +32,23 @@ export class ListComponent {
 
   onSelectUser(user: UserObject): void {
     this.userSelected.emit(user);
+  }
+
+  private onMessageListener(): void {
+    // this.chatService.onMessage();
+    this.chatService.newMessageBehaviorSubject.subscribe((msg: ReceiveMessageObj | null) => {
+      // console.log('Message received in subscription:', msg);
+      if (msg) {
+        this.onlineUsers = this.onlineUsers.map(user => {
+          if (user.userId === msg.senderId) {
+            user.newMessageCount = (user.newMessageCount || 0) + 1;
+          }
+          return user;
+        })
+        // console.log('New message received:', msg);
+        msg.sender = msg.senderId;
+      }
+    })
   }
 
   getOnlineUsersFromApi(): void {
@@ -52,7 +70,8 @@ export class ListComponent {
   getAllUsersExpectCurrentUser(response: UserObject[]): UserObject[] {
     let onlineUsers = [];
     for (let key in response) {
-      if (this.userName !== response[key].username) {
+      if (this.currentUserName !== response[key].username) {
+        response[key].newMessageCount = 0;
         onlineUsers.push(response[key]);
       }
     }

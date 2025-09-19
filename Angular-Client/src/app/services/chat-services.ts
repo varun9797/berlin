@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { TokenService } from './token-service';
 
 
@@ -12,6 +12,9 @@ import { TokenService } from './token-service';
 export class ChatServices {
 
   private socket!: Socket;
+  private _newMessageBehaviorSubject = new BehaviorSubject<ReceiveMessageObj | null>(null);
+
+  readonly newMessageBehaviorSubject = this._newMessageBehaviorSubject.asObservable();
 
   constructor(private http: HttpClient, private tokenService: TokenService) {
   }
@@ -32,8 +35,11 @@ export class ChatServices {
     this.socket.emit('register', userObj);
   }
 
-  onMessage(callback: (msg: ReceiveMessageObj) => void): void {
-    this.socket.on('privateMessage', callback);
+  onMessage(): void {
+    this.socket.on('privateMessage', (data: ReceiveMessageObj) => {
+      console.log('Message received from socket:', data);
+      this._newMessageBehaviorSubject.next(data);
+    });
   }
 
   getOfflineMessages(requestedUserIds: string[], messagePagination: MessagePagination): Observable<any> {

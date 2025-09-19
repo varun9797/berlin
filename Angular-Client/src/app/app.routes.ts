@@ -3,6 +3,11 @@ import { authGuard } from './middlerware/auth.guard';
 
 export const routes: Routes = [
     {
+        path: '',
+        redirectTo: '/login',
+        pathMatch: 'full'
+    },
+    {
         path: 'login',
         loadComponent: () => import('./components/login-component/login-component').then(m => m.LoginComponent)
     }, {

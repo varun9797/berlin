@@ -19,125 +19,167 @@ type ChatPage = typeof chatPages[keyof typeof chatPages];
   styleUrl: './chat-component.scss'
 })
 export class ChatComponent implements OnInit, OnDestroy {
-  message: string = '';
+  // Message handling
+  message = '';
   messages: any[] = [];
-  chatPages = chatPages;
-  onlineUsersIdList: string[] = [];
 
-  userName: string = '';
-  userId: string = '';
-  isChatStarted: boolean = false;
-  onlineUsers: UserObject[] = [];
+  // User data
+  userName = '';
+  userId = '';
   selectedUser: UserObject = { username: '', userId: '' };
 
+  // UI state
   currentPage: ChatPage = chatPages.LIST;
-  tabVisibilityServiceSubscription: Subscription | undefined;
+  isChatStarted = false;
 
-  @ViewChild('messageSection') private messageSection: ElementRef | undefined;
+  // Online users
+  onlineUsers: UserObject[] = [];
 
-  constructor(private chatService: ChatServices,
-    private userService: UserService,
-    private tokenService: TokenService,
-    private tabVisibilityService: TabVisibilityService) { }
+  // Subscriptions
+  private tabVisibilitySubscription?: Subscription;
+
+  // Constants
+  readonly chatPages = chatPages;
+
+  @ViewChild('messageSection') private messageSection?: ElementRef;
+
+  constructor(
+    private readonly chatService: ChatServices,
+    private readonly userService: UserService,
+    private readonly tokenService: TokenService,
+    private readonly tabVisibilityService: TabVisibilityService
+  ) { }
 
 
   ngOnInit(): void {
-    this.chatService.connect(this.tokenService.getUserIdFromToken() || '');
-    this.userName = this.tokenService.getUserNameFromToken() || '';
-    this.userId = this.tokenService.getUserIdFromToken() || '';
-    this.connectChat();
-    this.setIsUserOnline();
-    // this.getOnlineUsers();
-    this.chatService.onMessage((msg: ReceiveMessageObj) => {
-      msg.sender = msg.senderId;
-      // console.log('New message received:', msg.senderId, this.userId);
-      this.messages.push(msg);
-      this.scrollToBottom();
-    });
-    this.tabVisibilityServiceSubscription = this.tabVisibilityService.onVisibilityChange().subscribe((visible) => {
-      // this.isActive = visible;
-      console.log("is active", visible);
-
-
-    });
+    this.initializeUser();
+    this.connectToChat();
+    this.setupMessageListener();
+    this.setupTabVisibilityListener();
   }
 
+  private initializeUser(): void {
+    const token = this.tokenService;
+    this.userId = token.getUserIdFromToken() || '';
+    this.userName = token.getUserNameFromToken() || '';
+  }
 
-  setIsUserOnline(): void {
-    this.chatService.getOnlineUsers().subscribe(onlineUsers => {
-      console.log('Online users3333:', onlineUsers, this.selectedUser.userId);
-      this.onlineUsers = onlineUsers;
-      if (this.selectedUser) {
-        if (this.isUserOnline()) {
-          this.selectedUser.isOnline = true;
-        } else {
-          this.selectedUser.isOnline = false;
-        }
+  private connectToChat(): void {
+    this.chatService.connect(this.userId);
+    this.connectChat();
+    this.setIsUserOnline();
+    this.chatService.onMessage();
+  }
+
+  private setupMessageListener(): void {
+    this.chatService.newMessageBehaviorSubject.subscribe(msg => {
+      if (msg) {
+        msg.sender = msg.senderId;
+        this.messages.push(msg);
+        this.scrollToBottom();
       }
     });
   }
 
-  isUserOnline(): boolean {
-    return this.onlineUsers.some(user => {
-      return user.userId == this.selectedUser.userId
-    })
+  private setupTabVisibilityListener(): void {
+    this.tabVisibilitySubscription = this.tabVisibilityService
+      .onVisibilityChange()
+      .subscribe(visible => console.log("Tab visibility changed:", visible));
+  }
+
+
+  private setIsUserOnline(): void {
+    this.chatService.getOnlineUsers().subscribe(onlineUsers => {
+      this.onlineUsers = onlineUsers;
+      this.updateSelectedUserOnlineStatus();
+    });
+  }
+
+  private updateSelectedUserOnlineStatus(): void {
+    if (this.selectedUser.userId) {
+      this.selectedUser.isOnline = this.isUserOnline();
+    }
+  }
+
+  private isUserOnline(): boolean {
+    return this.onlineUsers.some(user => user.userId === this.selectedUser.userId);
   }
 
   setCurrentPage(page: ChatPage): void {
     this.currentPage = page;
+    this.clearSelectedUser();
+  }
+
+  private clearSelectedUser(): void {
     this.selectedUser = { username: '', userId: '' };
   }
 
   onUserSelected(user: UserObject): void {
     this.setCurrentPage(chatPages.CHAT);
-    this.selectedUser = user;
-    // this.onlineUsersIdList.includes(user.userId) ? this.selectedUser.isOnline = true : this.selectedUser.isOnline = false;
-    if (this.isUserOnline()) {
-      this.selectedUser.isOnline = true;
-    } else {
-      this.selectedUser.isOnline = false;
-    }
-    // this.isUserOnline();
-    let messagePagination: MessagePagination = { page: messagePaginationConstants.SKIP, limit: messagePaginationConstants.LIMIT };
-    this.chatService.getOfflineMessages([user.userId], messagePagination).subscribe({
-      next: (response: any) => {
+    this.selectedUser = { ...user };
+    this.updateSelectedUserOnlineStatus();
+    this.loadOfflineMessages(user.userId);
+  }
+
+  private loadOfflineMessages(userId: string): void {
+    const pagination: MessagePagination = {
+      page: messagePaginationConstants.SKIP,
+      limit: messagePaginationConstants.LIMIT
+    };
+
+    this.chatService.getOfflineMessages([userId], pagination).subscribe({
+      next: response => {
         this.messages = response.data || [];
-        console.log('Offline messages:', response);
         this.scrollToBottom();
-      }, error: (error) => {
-        console.error('Error fetching offline messages:', error);
-      }
-    })
+      },
+      error: error => console.error('Error loading offline messages:', error)
+    });
   }
 
   sendMessage(): void {
-    if (this.message.trim()) {
-      // this.chatService.sendMessage(this.selectedUser, this.message);
-      let messageObj: SendMessageObj = { senderId: this.userId, reciverId: this.selectedUser.userId, message: this.message.trim() };
-      this.chatService.sendMessage(messageObj);
-      this.scrollToBottom();
-      this.message = '';
-    }
+    if (!this.isMessageValid()) return;
+
+    const messageObj: SendMessageObj = {
+      senderId: this.userId,
+      reciverId: this.selectedUser.userId,
+      message: this.message.trim()
+    };
+
+    this.chatService.sendMessage(messageObj);
+    this.clearMessage();
+    this.scrollToBottom();
   }
 
-  scrollToBottom(): void {
+  private isMessageValid(): boolean {
+    return this.message.trim().length > 0;
+  }
+
+  private clearMessage(): void {
+    this.message = '';
+  }
+
+  private scrollToBottom(): void {
     setTimeout(() => {
       if (this.messageSection) {
-        this.messageSection.nativeElement.scrollTop = this.messageSection.nativeElement.scrollHeight;
+        const element = this.messageSection.nativeElement;
+        element.scrollTop = element.scrollHeight;
       }
-    }, 50)
+    }, 50);
   }
 
-  connectChat(): void {
-    if (this.userName.trim()) {
-      this.isChatStarted = true;
-      const userObj: UserObject = { username: this.userName, userId: this.tokenService.getUserIdFromToken() || '' };
-      this.chatService.registeruser(userObj);
-    }
+  private connectChat(): void {
+    if (!this.userName.trim()) return;
+
+    this.isChatStarted = true;
+    const userObj: UserObject = {
+      username: this.userName,
+      userId: this.userId
+    };
+    this.chatService.registeruser(userObj);
   }
 
   ngOnDestroy(): void {
     this.chatService.disconnect();
-    this.tabVisibilityServiceSubscription?.unsubscribe();
+    this.tabVisibilitySubscription?.unsubscribe();
   }
 }
