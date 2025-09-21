@@ -112,3 +112,49 @@ type CreateGroupRequest = {
         onlyAdminsCanSendMessages: boolean;
     };
 }
+
+type InvitationObject = {
+    _id: string;
+    inviteToken: string;
+    inviteLink: string;
+    expiresAt: Date;
+    maxUses: number | null;
+    usedCount: number;
+    createdAt: Date;
+}
+
+type JoinRequestObject = {
+    _id: string;
+    conversationId: string;
+    userId: {
+        _id: string;
+        username: string;
+        email: string;
+    };
+    invitationId: string;
+    status: 'pending' | 'approved' | 'rejected';
+    message?: string;
+    processedBy?: string;
+    processedAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+type InvitationDetailsResponse = {
+    groupName: string;
+    groupDescription?: string;
+    memberCount: number;
+    expiresAt: Date;
+    remainingUses: number | null;
+}
+
+type CreateInvitationRequest = {
+    conversationId: string;
+    expiresInDays?: number;
+    maxUses?: number | null;
+}
+
+type JoinRequestSubmission = {
+    token: string;
+    message?: string;
+}

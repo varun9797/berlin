@@ -71,6 +71,33 @@ export interface MessageType {
     updatedAt: Date;
 }
 
+export interface InvitationType {
+    _id: string;
+    conversationId: string;
+    createdBy: string;
+    inviteToken: string;
+    inviteLink: string;
+    isActive: boolean;
+    expiresAt: Date;
+    maxUses: number | null;
+    usedCount: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface JoinRequestType {
+    _id: string;
+    conversationId: string;
+    userId: string;
+    invitationId: string;
+    status: 'pending' | 'approved' | 'rejected';
+    message?: string;
+    processedBy?: string;
+    processedAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface AuthRequest extends Request {
     userId?: string;
 }

@@ -17,5 +17,8 @@ export const routes: Routes = [
     }, {
         path: 'register',
         loadComponent: () => import('./components/user-resgistration-component/user-resgistration-component').then(m => m.UserResgistrationComponent)
+    }, {
+        path: 'join-group',
+        loadComponent: () => import('./components/join-group/join-group.component').then(m => m.JoinGroupComponent)
     }
 ];

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ChatServices } from '../../../services/chat-services';
 import { UserService } from '../../../services/user-service';
+import { InvitationService } from '../../../services/invitation-service';
 import { messagePaginationConstants } from '../../../utils/const';
 
 @Component({
@@ -39,6 +40,19 @@ export class ChatBoxComponent implements OnInit, OnDestroy {
     isLoadingUsers = false;
     isMemberActionLoading = false;
 
+    // Invitation management
+    isManagingInvitations = false;
+    invitations: InvitationObject[] = [];
+    joinRequests: JoinRequestObject[] = [];
+    isInvitationActionLoading = false;
+    isCreatingInvitation = false;
+    isProcessingRequest = false;
+    revokingInvitationId: string | null = null;
+    invitationForm = {
+        usageLimit: 10,
+        expiresInHours: 24
+    };
+
     // Subscriptions
     private messageSubscription?: Subscription;
     private groupMessageSubscription?: Subscription;
@@ -51,7 +65,8 @@ export class ChatBoxComponent implements OnInit, OnDestroy {
 
     constructor(
         private readonly chatService: ChatServices,
-        private readonly userService: UserService
+        private readonly userService: UserService,
+        private readonly invitationService: InvitationService
     ) { }
 
     ngOnInit(): void {
@@ -540,5 +555,194 @@ export class ChatBoxComponent implements OnInit, OnDestroy {
 
     getUserInitials(username: string): string {
         return this.getInitials(username);
+    }
+
+    // Invitation Management Methods
+    canManageInvitations(): boolean {
+        return this.isGroupChat && this.isGroupAdmin();
+    }
+
+    async startManageInvitations(): Promise<void> {
+        if (!this.canManageInvitations() || !this.selectedConversation) return;
+
+        console.log('Starting invitation management...');
+        this.isManagingInvitations = true;
+        this.isInvitationActionLoading = true;
+
+        let invitationsLoaded = false;
+        let joinRequestsLoaded = false;
+
+        const checkLoadingComplete = () => {
+            console.log('Checking loading complete:', { invitationsLoaded, joinRequestsLoaded });
+            if (invitationsLoaded && joinRequestsLoaded) {
+                console.log('Both loaded, setting isInvitationActionLoading to false');
+                this.isInvitationActionLoading = false;
+            }
+        };
+
+        try {
+            // Load existing invitations
+            this.invitationService.getGroupInvitations(this.selectedConversation._id).subscribe({
+                next: (response: { data: InvitationObject[] }) => {
+                    console.log('Invitations loaded:', response.data);
+                    this.invitations = response.data;
+                },
+                error: (error: any) => {
+                    console.error('Error loading invitations:', error);
+                    invitationsLoaded = true;
+                    checkLoadingComplete();
+                },
+                complete: () => {
+                    console.log('Invitations loading completed');
+                    invitationsLoaded = true;
+                    checkLoadingComplete();
+                }
+            });
+
+            // Load pending join requests
+            this.invitationService.getGroupJoinRequests(this.selectedConversation._id).subscribe({
+                next: (response: { data: JoinRequestObject[] }) => {
+                    console.log('Join requests loaded:', response.data);
+                    this.joinRequests = response.data;
+                },
+                error: (error: any) => {
+                    console.error('Error loading join requests:', error);
+                    joinRequestsLoaded = true;
+                    checkLoadingComplete();
+                },
+                complete: () => {
+                    console.log('Join requests loading completed');
+                    joinRequestsLoaded = true;
+                    checkLoadingComplete();
+                }
+            });
+        } catch (error) {
+            console.error('Error starting invitation management:', error);
+            this.isInvitationActionLoading = false;
+        }
+    }
+
+    createInvitation(): void {
+        if (!this.selectedConversation) return;
+
+        this.isCreatingInvitation = true;
+
+        const request: CreateInvitationRequest = {
+            conversationId: this.selectedConversation._id,
+            expiresInDays: this.invitationForm.expiresInHours / 24,
+            maxUses: this.invitationForm.usageLimit
+        };
+
+        console.log('Creating invitation...', request);
+
+        this.invitationService.createGroupInvitation(request).subscribe({
+            next: (response: { data: InvitationObject; message: string }) => {
+                console.log('Invitation created:', response);
+                this.invitations.unshift(response.data);
+                
+                // Copy link to clipboard
+                const invitationLink = response.data.inviteLink;
+                navigator.clipboard.writeText(invitationLink).then(() => {
+                    alert('Invitation link copied to clipboard!');
+                }).catch(err => {
+                    console.error('Could not copy link:', err);
+                    alert(`Invitation created! Link: ${invitationLink}`);
+                });
+            },
+            error: (error: any) => {
+                console.error('Error creating invitation:', error);
+                alert('Failed to create invitation');
+            },
+            complete: () => {
+                console.log('Create invitation request completed');
+                this.isCreatingInvitation = false;
+            }
+        });
+    }
+
+    processJoinRequest(requestId: string, action: 'approve' | 'reject'): void {
+        this.isProcessingRequest = true;
+
+        this.invitationService.processJoinRequest(requestId, action).subscribe({
+            next: (response) => {
+                console.log(`Join request ${action}d:`, response);
+                
+                // Remove processed request from list
+                this.joinRequests = this.joinRequests.filter(req => req._id !== requestId);
+                
+                if (action === 'approve') {
+                    // Refresh conversation data to show new member
+                    this.refreshConversationData();
+                }
+            },
+            error: (error) => {
+                console.error(`Error ${action}ing join request:`, error);
+                alert(`Failed to ${action} join request`);
+            },
+            complete: () => {
+                this.isProcessingRequest = false;
+            }
+        });
+    }
+
+    deactivateInvitation(invitationId: string): void {
+        const confirmDeactivate = confirm('Revoke this invitation link?');
+        if (!confirmDeactivate) return;
+
+        this.revokingInvitationId = invitationId;
+
+        this.invitationService.revokeInvitation(invitationId).subscribe({
+            next: (response: { message: string }) => {
+                console.log('Invitation revoked:', response);
+                
+                // Remove invitation from list
+                this.invitations = this.invitations.filter(inv => inv._id !== invitationId);
+            },
+            error: (error: any) => {
+                console.error('Error revoking invitation:', error);
+                alert('Failed to revoke invitation');
+            },
+            complete: () => {
+                this.revokingInvitationId = null;
+            }
+        });
+    }
+
+    copyInvitationLink(invitation: InvitationObject): void {
+        const invitationLink = invitation.inviteLink;
+        navigator.clipboard.writeText(invitationLink).then(() => {
+            alert('Invitation link copied to clipboard!');
+        }).catch(err => {
+            console.error('Could not copy link:', err);
+            alert(`Link: ${invitationLink}`);
+        });
+    }
+
+    stopManageInvitations(): void {
+        this.isManagingInvitations = false;
+        this.invitations = [];
+        this.joinRequests = [];
+    }
+
+    getTimeAgo(dateString: string | Date): string {
+        const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+        const now = new Date();
+        const diffInMs = now.getTime() - date.getTime();
+        const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+        const diffInDays = Math.floor(diffInHours / 24);
+
+        if (diffInDays > 0) {
+            return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+        } else if (diffInHours > 0) {
+            return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+        } else {
+            const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+            return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+        }
+    }
+
+    isInvitationExpired(expiresAt: string | Date): boolean {
+        const date = typeof expiresAt === 'string' ? new Date(expiresAt) : expiresAt;
+        return date < new Date();
     }
 }

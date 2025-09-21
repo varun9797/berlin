@@ -47,6 +47,17 @@
                     </svg>
                 </button>
 
+                <!-- Admin: Invite Members Button -->
+                <button class="invite-members-button" 
+                        *ngIf="isGroupAdmin()" 
+                        (click)="startManageInvitations()" 
+                        aria-label="Create invitation link"
+                        title="Create invitation link for group">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                        <path d="M9,12L11,14L15,10M13,1L21,5V11C21,16.55 17.16,21.74 12,23C6.84,21.74 3,16.55 3,11V5L11,1H13M11,7V13L17,10L11,7Z"/>
+                    </svg>
+                </button>
+
                 <!-- Non-Admin: View Members Button -->
                 <button class="view-members-button" 
                         *ngIf="!isGroupAdmin()" 
@@ -236,6 +247,161 @@
                     [class.loading]="isMemberActionLoading">
                     {{ isMemberActionLoading ? 'Adding...' : `Add ${selectedUsersToAdd.length} User${selectedUsersToAdd.length > 1 ? 's' : ''}` }}
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invitation Management Modal -->
+    <div class="invitation-management-modal" *ngIf="isManagingInvitations" (click)="stopManageInvitations()">
+        <div class="modal-content large-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>🔗 Group Invitation Management</h3>
+                <button class="close-btn" (click)="stopManageInvitations()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Create New Invitation -->
+                <div class="create-invitation-section">
+                    <h4>Create New Invitation Link</h4>
+                    <div class="invitation-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="expiresInDays">Expires In (Days)</label>
+                                <select id="expiresInDays" [(ngModel)]="invitationForm.expiresInHours" class="form-select">
+                                    <option [ngValue]="24">1 Day</option>
+                                    <option [ngValue]="72">3 Days</option>
+                                    <option [ngValue]="168">1 Week</option>
+                                    <option [ngValue]="720">1 Month</option>
+                                    <option [ngValue]="8760">1 Year</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="maxUses">Usage Limit</label>
+                                <select id="maxUses" [(ngModel)]="invitationForm.usageLimit" class="form-select">
+                                    <option [ngValue]="1">1 Use</option>
+                                    <option [ngValue]="5">5 Uses</option>
+                                    <option [ngValue]="10">10 Uses</option>
+                                    <option [ngValue]="25">25 Uses</option>
+                                    <option [ngValue]="50">50 Uses</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button 
+                            class="btn btn-primary create-invite-btn"
+                            (click)="createInvitation()"
+                            [disabled]="isCreatingInvitation"
+                            [class.loading]="isCreatingInvitation">
+                            {{ isCreatingInvitation ? 'Creating...' : '✨ Create Invitation Link' }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Invitations -->
+                <div class="active-invitations-section" *ngIf="invitations.length > 0">
+                    <h4>Active Invitation Links ({{ invitations.length }})</h4>
+                    <div class="invitations-list">
+                        <div class="invitation-item" *ngFor="let invitation of invitations">
+                            <div class="invitation-info">
+                                <div class="invitation-link">
+                                    <strong>🔗 Invitation Link:</strong>
+                                    <div class="link-container">
+                                        <input 
+                                            #linkInput
+                                            type="text" 
+                                            [value]="invitation.inviteLink" 
+                                            readonly 
+                                            class="link-input">
+                                        <button 
+                                            class="copy-btn"
+                                            (click)="copyInvitationLink(invitation)"
+                                            title="Copy link">
+                                            📋
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="invitation-details">
+                                    <span class="detail-item">
+                                        <strong>Expires:</strong> {{ getTimeAgo(invitation.expiresAt) }}
+                                        <span *ngIf="isInvitationExpired(invitation.expiresAt)" class="expired-label">(Expired)</span>
+                                    </span>
+                                    <span class="detail-item">
+                                        <strong>Usage:</strong> 
+                                        {{ invitation.usedCount }}{{ invitation.maxUses ? '/' + invitation.maxUses : ' (unlimited)' }}
+                                    </span>
+                                    <span class="detail-item">
+                                        <strong>Created:</strong> {{ getTimeAgo(invitation.createdAt) }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="invitation-actions">
+                                <button 
+                                    class="btn btn-danger btn-sm"
+                                    (click)="deactivateInvitation(invitation._id)"
+                                    [disabled]="revokingInvitationId === invitation._id"
+                                    title="Revoke invitation">
+                                    {{ revokingInvitationId === invitation._id ? '⏳' : '🗑️' }} Revoke
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- No Active Invitations -->
+                <div class="no-invitations" *ngIf="invitations.length === 0 && !isInvitationActionLoading">
+                    <p>No active invitation links. Create one to invite new members!</p>
+                </div>
+
+                <!-- Loading State -->
+                <div class="loading-invitations" *ngIf="isInvitationActionLoading">
+                    <p>Loading invitations...</p>
+                </div>
+
+                <!-- Join Requests Section -->
+                <div class="join-requests-section" *ngIf="joinRequests.length > 0">
+                    <h4>⏳ Pending Join Requests ({{ joinRequests.length }})</h4>
+                    <div class="join-requests-list">
+                        <div class="join-request-item" *ngFor="let request of joinRequests">
+                            <div class="request-info">
+                                <div class="user-info">
+                                    <div class="user-avatar">{{ getUserInitials(request.userId.username) }}</div>
+                                    <div class="user-details">
+                                        <strong>{{ request.userId.username }}</strong>
+                                        <span class="user-email">{{ request.userId.email }}</span>
+                                        <div class="request-message" *ngIf="request.message">
+                                            <em>"{{ request.message }}"</em>
+                                        </div>
+                                        <span class="request-time">Requested {{ getTimeAgo(request.createdAt) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="request-actions">
+                                <button 
+                                    class="btn btn-success btn-sm"
+                                    (click)="processJoinRequest(request._id, 'approve')"
+                                    [disabled]="isProcessingRequest"
+                                    title="Approve request">
+                                    ✅ Approve
+                                </button>
+                                <button 
+                                    class="btn btn-danger btn-sm"
+                                    (click)="processJoinRequest(request._id, 'reject')"
+                                    [disabled]="isProcessingRequest"
+                                    title="Reject request">
+                                    ❌ Reject
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- No Join Requests -->
+                <div class="no-join-requests" *ngIf="joinRequests.length === 0 && !isInvitationActionLoading">
+                    <p>No pending join requests.</p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" (click)="stopManageInvitations()">Close</button>
             </div>
         </div>
     </div>
