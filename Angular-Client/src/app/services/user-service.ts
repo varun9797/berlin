@@ -28,9 +28,36 @@ export class UserService {
         // save the token in local storage
         if (response.body && response.body.token) {
           this.tokenService.setToken(response.body.token);
+          // Also store user data if available
+          if (response.body.user) {
+            localStorage.setItem('currentUser', JSON.stringify(response.body.user));
+          }
         }
       })
     );
+  }
+
+  getCurrentUserId(): string {
+    const user = this.getCurrentUser();
+    return user?._id || user?.userId || '';
+  }
+
+  getCurrentUser(): any {
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      return userStr ? JSON.parse(userStr) : null;
+    } catch (error) {
+      console.error('Error parsing current user from localStorage:', error);
+      return null;
+    }
+  }
+
+  setCurrentUser(user: any): void {
+    localStorage.setItem('currentUser', JSON.stringify(user));
+  }
+
+  clearCurrentUser(): void {
+    localStorage.removeItem('currentUser');
   }
 
 }

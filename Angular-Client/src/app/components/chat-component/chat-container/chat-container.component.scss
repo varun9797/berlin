@@ -1,0 +1,185 @@
+.chat-container {
+    height: 100vh;
+    height: 100dvh; // Dynamic viewport height for mobile browsers
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden; // Prevent container overflow
+
+    @media (min-width: 769px) {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        height: calc(100vh - 40px);
+        height: calc(100dvh - 40px);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+}
+
+.app-header {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+
+    @media (max-width: 768px) {
+        padding: 16px;
+    }
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    @media (max-width: 768px) {
+        gap: 12px;
+    }
+}
+
+.view-toggle-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+    }
+
+    &.active {
+        background: rgba(255, 255, 255, 0.9);
+        color: #667eea;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}
+
+.app-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    @media (max-width: 768px) {
+        font-size: 24px;
+        gap: 8px;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 20px;
+    }
+}
+
+.chat-icon {
+    font-size: 32px;
+
+    @media (max-width: 768px) {
+        font-size: 28px;
+    }
+
+    @media (max-width: 480px) {
+        font-size: 24px;
+    }
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 16px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+
+    @media (max-width: 768px) {
+        gap: 8px;
+        padding: 6px 12px;
+    }
+}
+
+.user-avatar-small {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+
+    @media (max-width: 768px) {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+}
+
+.user-welcome {
+    font-size: 16px;
+    font-weight: 500;
+    color: white;
+
+    @media (max-width: 768px) {
+        font-size: 14px;
+    }
+
+    @media (max-width: 480px) {
+        display: none;
+    }
+}
+
+.chat-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: white;
+    border-radius: 0 0 12px 12px;
+    min-height: 0; // Allow flex children to shrink
+
+    @media (max-width: 768px) {
+        border-radius: 0;
+        flex: 1;
+        height: 0; // Force flex child to respect parent height
+    }
+}
+
+.list-view,
+.chat-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0; // Allow flex children to shrink
+
+    @media (max-width: 768px) {
+        height: 100%;
+    }
+}
+
+.list-view {
+    background: #f8f9fa;
+}

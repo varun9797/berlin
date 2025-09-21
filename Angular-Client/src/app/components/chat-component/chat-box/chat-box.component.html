@@ -1,0 +1,62 @@
+<div class="chat-box">
+    <div class="chat-header">
+        <button class="back-button" (click)="onBackClick()" aria-label="Back to chat list">
+            <svg class="back-icon" viewBox="0 0 24 24" width="20" height="20">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+            </svg>
+            <span class="back-text">Back</span>
+        </button>
+
+        <div class="chat-user-info">
+            <div class="user-avatar" [class.group-avatar]="isGroupChat">
+                {{ getInitials(chatTitle) }}
+            </div>
+            <div class="user-details">
+                <h3 class="user-name">{{ chatTitle }}</h3>
+                <span class="status-indicator" [class.online]="!isGroupChat && selectedUser?.isOnline"
+                    [class.offline]="!isGroupChat && !selectedUser?.isOnline" [class.group-info]="isGroupChat">
+                    <span class="status-dot" *ngIf="!isGroupChat"></span>
+                    {{ chatSubtitle }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div #messageSection class="messages-section">
+        <div class="messages-container">
+            <div class="message-wrapper" *ngFor="let msg of messages; trackBy: trackByMessageId">
+                <div class="message-content" [class.current-user]="msg.senderId === currentUserId"
+                    [class.other-user]="msg.senderId !== currentUserId" [class.group-message]="isGroupChat">
+
+                    <!-- Group message sender info -->
+                    <div class="message-sender" *ngIf="isGroupChat && msg.senderId !== currentUserId">
+                        <span class="sender-name">{{ getSenderName(msg.senderId) }}</span>
+                    </div>
+
+                    <div class="message-bubble">
+                        <div class="message-text">{{ msg.content }}</div>
+                        <div class="message-time">{{ getMessageTime(msg.timestamp) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="empty-state" *ngIf="messages.length === 0">
+                <div class="empty-icon">💬</div>
+                <p>No messages yet. Start the conversation!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="message-input-container">
+        <div class="message-input">
+            <input [(ngModel)]="message" placeholder="Type a message..." (keydown.enter)="sendMessage()"
+                class="message-input-field" maxlength="1000" autocomplete="off" />
+
+            <button (click)="sendMessage()" class="send-button" [disabled]="!message.trim()" aria-label="Send message">
+                <svg class="send-icon" viewBox="0 0 24 24" width="20" height="20">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>

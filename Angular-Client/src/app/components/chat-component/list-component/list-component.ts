@@ -62,7 +62,9 @@ export class ListComponent {
   }
 
   setIsUserOnline(): void {
-    this.chatService.getOnlineUsers().subscribe(onlineUsers => {
+    console.log('Setting up online users listener...');
+    this.chatService.onlineUsersSubject.subscribe(onlineUsers => {
+      console.log('Online users updated:******', onlineUsers);
       this.onlineUsers = this.getAllUsersExpectCurrentUser(onlineUsers);
     });
   }
@@ -80,4 +82,16 @@ export class ListComponent {
     return onlineUsers;
   }
 
+  getInitials(username: string): string {
+    if (!username) return '?';
+    return username.split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  }
+
+  trackByUserId(index: number, user: UserObject): string {
+    return user.userId || index.toString();
+  }
 }

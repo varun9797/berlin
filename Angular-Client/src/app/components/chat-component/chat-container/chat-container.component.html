@@ -1,0 +1,41 @@
+<div class="chat-container">
+    <div class="app-header">
+        <h1 class="app-title">
+            <span class="chat-icon">💬</span>
+            Global Chat
+        </h1>
+        <div class="header-controls">
+            <button class="view-toggle-btn" (click)="toggleViewMode()" [class.active]="viewMode === 'conversations'"
+                *ngIf="currentPage === chatPages.LIST">
+                {{ viewMode === 'conversations' ? '👥 Users' : '💬 Chats' }}
+            </button>
+            <div class="user-info">
+                <div class="user-avatar-small">{{ userName }}</div>
+                <span class="user-welcome">{{ userName }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-content" [ngSwitch]="currentPage">
+        <!-- Chat List View -->
+        <div *ngSwitchCase="chatPages.LIST" class="list-view">
+            <!-- Conversations List -->
+            <app-conversations-list *ngIf="viewMode === 'conversations'" [currentUserId]="userId"
+                [currentUserName]="userName" (conversationSelected)="onConversationSelected($event)"
+                (createGroupClick)="onCreateGroupRequested()">
+            </app-conversations-list>
+
+            <!-- Users List -->
+            <app-list-component *ngIf="viewMode === 'users'" [currentUserName]="userName"
+                (userSelected)="onUserSelected($event)">
+            </app-list-component>
+        </div>
+
+        <!-- Chat Box View -->
+        <div *ngSwitchCase="chatPages.CHAT" class="chat-view">
+            <app-chat-box [selectedUser]="selectedUser" [selectedConversation]="selectedConversation"
+                [currentUserId]="userId" (backToList)="onBackToList()">
+            </app-chat-box>
+        </div>
+    </div>
+</div>

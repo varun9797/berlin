@@ -1,98 +1,100 @@
-.chat-container {
-    display: flex;
-    border: 5px solid black;
-    max-width: 916px;
-    min-height: 300px;
-    flex-direction: column;
+// Global chat component styles with CSS custom properties for viewport
+:host {
+    display: block;
+    height: 100vh;
+    height: 100dvh; // Dynamic viewport height for mobile browsers
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-    .chat-box {
-        display: flex;
-        flex-direction: column;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 10px;
-        justify-content: space-between;
-        height: auto;
-        overflow-y: auto;
+    // CSS custom properties for consistent viewport handling
+    --viewport-height: 100vh;
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 
-        .messages-section {
-            flex: 1;
-            overflow-y: auto;
-            max-height: 180px;
-            margin-bottom: 10px;
-
-            .current-user {
-                text-align: right;
-            }
-
-            .user-name {
-                font-weight: bold;
-            }
-
-            .message {
-                padding: 5px;
-                border-bottom: 1px solid #eee;
-
-                &:last-child {
-                    border-bottom: none;
-                }
-            }
-        }
-    }
-
-    .online-users {
-        flex: 1;
-        width: 200px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 10px;
-        height: auto;
-        overflow-y: auto;
-
-        h3 {
-            margin-top: 0;
-            text-align: center;
-        }
-
-        ul {
-            list-style-type: none;
-            padding: 0;
-
-            li {
-                padding: 5px 0;
-                border-bottom: 1px solid #eee;
-
-                &:last-child {
-                    border-bottom: none;
-                }
-            }
-        }
+    @supports (height: 100dvh) {
+        --viewport-height: 100dvh;
     }
 }
 
-// put this section at the bottom always
-.message-input {
-    display: flex;
-    gap: 10px;
-    margin-top: auto;
+// Mobile viewport optimizations
+@media (max-width: 768px) {
+    :host {
+        height: var(--viewport-height);
+        position: relative;
+        overflow: hidden;
+    }
+}
 
-    input {
-        flex: 1;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+// Prevent body scroll when chat is open on mobile
+@media (max-width: 768px) {
+    :host {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+    }
+}
+
+// Smooth transitions for all chat elements
+* {
+    box-sizing: border-box;
+}
+
+// Scrollbar styling for all chat components
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+// Touch optimizations for mobile
+@media (hover: none) and (pointer: coarse) {
+
+    // Remove hover effects on touch devices
+    .user-item:hover {
+        background: transparent !important;
+        transform: none !important;
     }
 
-    button {
-        padding: 10px 20px;
-        background-color: #007BFF;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
+    .back-button:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        transform: none !important;
+    }
 
-        &:hover {
-            background-color: #0056b3;
-        }
+    .send-button:hover {
+        transform: none !important;
+    }
+}
+
+// High DPI display optimizations
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+
+    .user-avatar,
+    .user-avatar-small {
+        background-size: cover;
+    }
+}
+
+// Prevent zoom on input focus (iOS Safari)
+@media (max-width: 768px) {
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    textarea {
+        font-size: 16px !important;
     }
 }
