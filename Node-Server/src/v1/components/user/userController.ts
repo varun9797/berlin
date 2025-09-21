@@ -24,8 +24,21 @@ export const getUserProfile = async (req: Request, res: Response) => {
 }
 
 export const getOnlineUsers = async (req: Request, res: Response) => {
-    const users = onlineUsers
-    res.status(httpStatusCodes.OK).send(users);
+    try {
+        // Convert onlineUsers object to array
+        const usersArray = Object.values(onlineUsers).map((user: any) => ({
+            userId: user.userId,
+            username: user.username,
+            isOnline: true,
+            socketId: user.socketId
+        }));
+
+        console.log('Sending online users array:', usersArray);
+        res.status(httpStatusCodes.OK).send(usersArray);
+    } catch (error) {
+        console.error('Error getting online users:', error);
+        res.status(httpStatusCodes.INTERNAL_SERVER_ERROR).send([]);
+    }
 }
 
 export const userLogin = async (req: Request, res: Response) => {

@@ -141,6 +141,12 @@
     &:last-child {
         border-bottom: none;
     }
+
+    &:has(.group-badge) {
+        border-left: 3px solid #25d366; // Green accent for groups
+    }
+
+    animation: slideIn 0.3s ease;
 }
 
 .conversation-avatar {
@@ -172,7 +178,11 @@
     }
 
     &.group-avatar {
-        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        background: linear-gradient(135deg, #25d366 0%, #20c997 100%); // WhatsApp-like green for groups
+    }
+
+    &.user-avatar {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     }
 
     .online-indicator {
@@ -292,18 +302,17 @@
 }
 
 .unread-badge {
-    background: #ff4757;
+    background: #25d366 !important; // WhatsApp green
     color: white;
     font-size: 11px;
     font-weight: 600;
     padding: 3px 7px;
-    border-radius: 10px;
+    border-radius: 12px;
     min-width: 18px;
     height: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: pulse 2s infinite;
 
     @media (max-width: 768px) {
         font-size: 10px;
@@ -314,13 +323,19 @@
 }
 
 .group-badge {
-    background: #e9ecef;
+    background-color: rgba(0, 0, 0, 0.1);
     color: #666;
+    border-radius: 10px;
+    padding: 2px 6px;
     font-size: 10px;
     font-weight: 500;
-    padding: 2px 6px;
-    border-radius: 8px;
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+
+    svg {
+        fill: currentColor;
+    }
 
     @media (max-width: 768px) {
         font-size: 9px;
@@ -343,6 +358,71 @@
 .conversation-item:hover .conversation-chevron {
     color: #667eea;
     transform: translateX(2px);
+}
+
+// WhatsApp-style enhancements
+.group-members-preview {
+    font-size: 13px;
+    color: #666;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sender-name {
+    font-weight: 600;
+    color: #333;
+    margin-right: 4px;
+}
+
+// Floating Action Button (FAB) for creating groups
+.fab-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+}
+
+.fab {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #25d366; // WhatsApp green
+    border: none;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background: #20c997;
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(37, 211, 102, 0.6);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    svg {
+        fill: currentColor;
+    }
+
+    @media (max-width: 768px) {
+        bottom: 16px;
+        right: 16px;
+        width: 48px;
+        height: 48px;
+
+        svg {
+            width: 20px;
+            height: 20px;
+        }
+    }
 }
 
 // Animations
@@ -368,10 +448,6 @@
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-.conversation-item {
-    animation: slideIn 0.3s ease;
 }
 
 // Mobile specific optimizations

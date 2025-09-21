@@ -2,7 +2,7 @@
     <div class="conversations-header">
         <h3 class="header-title">
             <span class="chat-icon">💬</span>
-            Conversations
+            Chats
         </h3>
         <button class="create-group-btn" (click)="onCreateGroupClick()" aria-label="Create group">
             <svg viewBox="0 0 24 24" width="18" height="18">
@@ -12,21 +12,29 @@
     </div>
 
     <div class="conversations-list">
-        <div class="empty-state" *ngIf="conversations.length === 0">
+        <div class="empty-state" *ngIf="combinedList.length === 0">
             <div class="empty-icon">📭</div>
-            <p class="empty-message">No conversations yet</p>
+            <p class="empty-message">No chats yet</p>
             <p class="empty-subtitle">Start a chat or create a group</p>
         </div>
 
-        <div class="conversation-item" *ngFor="let conversation of conversations; trackBy: trackByConversationId"
-            (click)="onConversationClick(conversation)">
+        <div class="conversation-item" *ngFor="let item of combinedList; trackBy: trackByItemId; let i = index"
+            (click)="onItemClick(item)">
 
             <div class="conversation-avatar">
-                <div class="avatar-container" [class.group-avatar]="conversation.type === 'group'">
-                    {{ getInitials(getConversationName(conversation)) }}
+                <div class="avatar-container" [class.group-avatar]="isConversation(item) && item.type === 'group'"
+                    [class.user-avatar]="isUser(item)">
+                    {{ getItemInitials(item) }}
+
+                    <!-- Online indicator for users -->
+                    <div class="online-indicator" *ngIf="isUser(item) && item.isOnline"></div>
+
+                    <!-- Online indicator for one-to-one conversations -->
                     <div class="online-indicator"
-                        *ngIf="isConversationOnline(conversation) && conversation.type === 'one-to-one'"></div>
-                    <div class="group-indicator" *ngIf="conversation.type === 'group'">
+                        *ngIf="isConversation(item) && item.type === 'one-to-one' && isConversationOnline(item)"></div>
+
+                    <!-- Group indicator -->
+                    <div class="group-indicator" *ngIf="isConversation(item) && item.type === 'group'">
                         <svg viewBox="0 0 24 24" width="12" height="12">
                             <path
                                 d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm5 7c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2z" />
@@ -37,26 +45,74 @@
 
             <div class="conversation-info">
                 <div class="conversation-header-row">
-                    <div class="conversation-name">{{ getConversationName(conversation) }}</div>
-                    <div class="conversation-time" *ngIf="conversation.lastMessage">
-                        {{ getLastMessageTime(conversation) }}
+                    <div class="conversation-name">{{ getItemName(item) }}</div>
+                    <div class="conversation-time" *ngIf="isConversation(item) && item.lastMessage">
+                        {{ getLastMessageTime(item) }}
                     </div>
                 </div>
 
                 <div class="conversation-details">
-                    <div class="last-message" *ngIf="conversation.lastMessage">
-                        <span class="message-preview">{{ conversation.lastMessage.content }}</span>
-                    </div>
-                    <div class="no-message" *ngIf="!conversation.lastMessage">
-                        <span class="no-message-text">No messages yet</span>
+                    <!-- Group conversation details -->
+                    <div class="last-message"
+                        *ngIf="isConversation(item) && item.type === 'group' && item.lastMessage; else groupNoMessage">
+                        <span class="message-preview">
+                            <span class="sender-name">{{ getSenderName(item.lastMessage.senderId) }}:</span>
+                            {{ item.lastMessage.content }}
+                        </span>
                     </div>
 
-                    <div class="conversation-badges">
-                        <div class="unread-badge" *ngIf="conversation.unreadCount && conversation.unreadCount > 0">
-                            {{ conversation.unreadCount > 99 ? '99+' : conversation.unreadCount }}
+                    <!-- One-to-one conversation details -->
+                    <div class="last-message"
+                        *ngIf="isConversation(item) && item.type === 'one-to-one' && item.lastMessage; else oneToOneNoMessage">
+                        <span class="message-preview">
+                            {{ item.lastMessage.content }}
+                        </span>
+                    </div>
+
+                    <!-- User item (no conversation yet) -->
+                    <div class="no-message" *ngIf="isUser(item)">
+                        <span class="no-message-text">
+                            Click to start chatting
+                        </span>
+                    </div>
+
+                    <!-- No message templates -->
+                    <ng-template #groupNoMessage>
+                        <div class="no-message" *ngIf="isConversation(item) && item.type === 'group'">
+                            <span class="group-members-preview">
+                                {{ getGroupMembersPreview(item) }}
+                            </span>
                         </div>
-                        <div class="group-badge" *ngIf="conversation.type === 'group'">
-                            {{ conversation.participants.length }} members
+                    </ng-template>
+
+                    <ng-template #oneToOneNoMessage>
+                        <div class="no-message" *ngIf="isConversation(item) && item.type === 'one-to-one'">
+                            <span class="no-message-text">No messages yet</span>
+                        </div>
+                    </ng-template>
+
+                    <div class="conversation-badges">
+                        <!-- Group member count -->
+                        <div class="group-badge" *ngIf="isConversation(item) && item.type === 'group'">
+                            <svg viewBox="0 0 24 24" width="12" height="12">
+                                <path
+                                    d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm5 7c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2z" />
+                            </svg>
+                            {{ item.participants.length }} members
+                        </div>
+
+                        <!-- Unread messages for conversations -->
+                        <div class="unread-badge"
+                            *ngIf="isConversation(item) && item.unreadCount && item.unreadCount > 0">
+                            {{ item.unreadCount > 99 ? '99+' : item.unreadCount }}
+                        </div>
+
+                        <!-- New message indicator for users -->
+                        <div class="new-user-badge" *ngIf="isUser(item)">
+                            <svg viewBox="0 0 24 24" width="12" height="12">
+                                <path
+                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                            </svg>
                         </div>
                     </div>
                 </div>
@@ -68,5 +124,16 @@
                 </svg>
             </div>
         </div>
+    </div>
+
+    <!-- Floating Action Button for Creating Groups -->
+    <div class="fab-container">
+        <button class="fab" (click)="onCreateGroupClick()" title="Create Group">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+                <path
+                    d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm5 7c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2z" />
+                <circle cx="12" cy="19" r="2" />
+            </svg>
+        </button>
     </div>
 </div>
