@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -14,7 +14,7 @@ import { messagePaginationConstants } from '../../../utils/const';
     templateUrl: './chat-box.component.html',
     styleUrl: './chat-box.component.scss'
 })
-export class ChatBoxComponent implements OnInit, OnDestroy {
+export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
     @Input() selectedUser!: UserObject;
     @Input() selectedConversation?: ConversationObject | null;
     @Input() currentUserId!: string;
@@ -31,6 +31,9 @@ export class ChatBoxComponent implements OnInit, OnDestroy {
     isRenamingGroup = false;
     newGroupName = '';
     isRenameLoading = false;
+
+    // Group delete functionality
+    isDeletingGroup = false;
 
     // Group member management
     isManagingMembers = false;
@@ -71,9 +74,26 @@ export class ChatBoxComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.initializeChatMode();
-        this.loadMessages();
+        this.loadConversationMessages();
         this.setupMessageListener();
         this.setupScrollMonitoring();
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        // Reinitialize when selectedUser or selectedConversation changes
+        if (changes['selectedUser'] || changes['selectedConversation']) {
+            this.initializeChatMode();
+            this.loadConversationMessages();
+            this.clearMessage();
+            
+            // Reset invitation-related states when switching conversations
+            this.isManagingInvitations = false;
+            this.isCreatingInvitation = false;
+            this.isProcessingRequest = false;
+            this.revokingInvitationId = null;
+            this.invitations = [];
+            this.joinRequests = [];
+        }
     }
 
     private initializeChatMode(): void {
@@ -365,6 +385,55 @@ export class ChatBoxComponent implements OnInit, OnDestroy {
         } catch (error) {
             console.error('Error renaming group:', error);
             this.isRenameLoading = false;
+        }
+    }
+
+    // Group delete functionality
+    async deleteGroup(): Promise<void> {
+        if (!this.isGroupChat || !this.selectedConversation || !this.isGroupAdmin()) return;
+
+        const groupName = this.selectedConversation.name || 'this group';
+        const memberCount = this.selectedConversation.participants.length;
+        
+        const confirmDelete = confirm(
+            `⚠️ DELETE GROUP: "${groupName}"\n\n` +
+            `This will permanently delete:\n` +
+            `• The group and all its messages\n` +
+            `• Remove all ${memberCount} members from the group\n` +
+            `• Cannot be undone\n\n` +
+            `Are you absolutely sure you want to continue?`
+        );
+        
+        if (!confirmDelete) return;
+
+        this.isDeletingGroup = true;
+
+        try {
+            this.chatService.deleteGroup(this.selectedConversation._id).subscribe({
+                next: (response: { message: string }) => {
+                    console.log('Group deleted successfully:', response);
+                    
+                    // Remove the conversation from local list
+                    this.chatService.removeConversationLocally(this.selectedConversation!._id);
+                    
+                    // Navigate back to the conversations list
+                    this.backToList.emit();
+                    
+                    // Show success message
+                    alert(`Group "${groupName}" has been deleted successfully.`);
+                },
+                error: (error: any) => {
+                    console.error('Error deleting group:', error);
+                    alert('Failed to delete the group. Please try again.');
+                },
+                complete: () => {
+                    this.isDeletingGroup = false;
+                }
+            });
+        } catch (error) {
+            console.error('Error deleting group:', error);
+            this.isDeletingGroup = false;
+            alert('Failed to delete the group. Please try again.');
         }
     }
 

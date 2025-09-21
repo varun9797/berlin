@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { ConversationModel, MessageModel } from "./chatModel";
+import { InvitationModel, JoinRequestModel } from "../invitation/invitationModel";
 import { AuthRequest, PaginationDetailsType } from "../../../types/types";
 import { Request, Response } from "express";
 import { httpStatusCodes } from "../../utils/httpStatusCodes";
@@ -75,8 +76,21 @@ export const createGroupConversation = async (req: AuthRequest, res: Response): 
         const savedConversation = await groupConversation.save();
         await savedConversation.populate('participants.userId', 'username email');
 
+        // Transform the populated data to match frontend expectations
+        const transformedConversation = {
+            ...savedConversation.toObject(),
+            participants: savedConversation.participants.map(p => ({
+                _id: (p.userId as any)._id,
+                username: (p.userId as any).username,
+                email: (p.userId as any).email,
+                role: p.role,
+                joinedAt: p.joinedAt,
+                isActive: p.isActive
+            }))
+        };
+
         res.status(httpStatusCodes.CREATED).json({
-            data: savedConversation,
+            data: transformedConversation,
             message: "Group created successfully"
         });
     } catch (error) {
@@ -529,6 +543,62 @@ export const updateGroupInfo = async (req: AuthRequest, res: Response): Promise<
         console.error('Error updating group info:', error);
         res.status(httpStatusCodes.INTERNAL_SERVER_ERROR).json({
             message: "Error updating group information"
+        });
+    }
+};
+
+// Delete group
+export const deleteGroup = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const userId = req.userId;
+        const { conversationId } = req.params;
+
+        if (!conversationId) {
+            res.status(httpStatusCodes.BAD_REQUEST).json({
+                message: "Conversation ID is required"
+            });
+            return;
+        }
+
+        // Find the conversation and check if user is admin
+        const conversation = await ConversationModel.findOne({
+            _id: conversationId,
+            type: 'group',
+            'participants.userId': userId,
+            'participants.role': 'admin'
+        });
+
+        if (!conversation) {
+            res.status(httpStatusCodes.FORBIDDEN).json({
+                message: "Only group admins can delete the group"
+            });
+            return;
+        }
+
+        // Delete all messages in the conversation first
+        await MessageModel.deleteMany({ conversationId: conversationId });
+
+        // Delete all invitations for this group
+        await InvitationModel.deleteMany({ conversationId: conversationId });
+
+        // Delete all join requests for this group
+        await JoinRequestModel.deleteMany({ conversationId: conversationId });
+
+        // Delete the conversation
+        const deletedConversation = await ConversationModel.findByIdAndDelete(conversationId);
+
+        if (!deletedConversation) {
+            res.status(httpStatusCodes.NOT_FOUND).json({ message: "Conversation not found" });
+            return;
+        }
+
+        res.status(httpStatusCodes.OK).json({
+            message: "Group deleted successfully"
+        });
+    } catch (error) {
+        console.error('Error deleting group:', error);
+        res.status(httpStatusCodes.INTERNAL_SERVER_ERROR).json({
+            message: "Error deleting group"
         });
     }
 };

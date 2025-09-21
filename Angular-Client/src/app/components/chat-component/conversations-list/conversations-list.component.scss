@@ -3,6 +3,16 @@
     display: flex;
     flex-direction: column;
     background: #ffffff;
+    min-height: 0; // Allow flex children to shrink
+    max-height: 100%; // Ensure container doesn't exceed parent height
+    
+    @media (max-width: 768px) {
+        overflow: hidden; // Only prevent overflow on mobile
+    }
+    
+    @media (min-width: 769px) {
+        // Allow scrolling on desktop by not setting overflow: hidden
+    }
 }
 
 .conversations-header {
@@ -15,6 +25,7 @@
     position: sticky;
     top: 0;
     z-index: 5;
+    flex-shrink: 0; // Prevent header from shrinking
 
     @media (max-width: 768px) {
         padding: 16px;
@@ -73,7 +84,33 @@
 .conversations-list {
     flex: 1;
     overflow-y: auto;
-
+    overflow-x: hidden;
+    min-height: 0; // Critical for flex scrolling
+    max-height: 100%; // Ensure list doesn't exceed parent
+    position: relative; // Establish containing block for scrolling
+    
+    // Ensure scrolling works on all screen sizes
+    @media (max-width: 768px) {
+        height: auto;
+        min-height: 300px;
+        max-height: calc(100vh - 200px); // Account for header and other elements
+    }
+    
+    @media (min-width: 769px) {
+        // For desktop, ensure proper flex behavior with height constraint
+        flex: 1;
+        min-height: 0;
+        max-height: calc(100vh - 140px); // Set a specific max height for desktop
+        height: auto; // Allow natural height but constrain with max-height
+        overflow-y: auto; // Explicitly enable vertical scrolling
+        overflow-x: hidden;
+    }
+    
+    // Firefox scrollbar styling (moved before nested rules to fix Sass warning)
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    
+    // Enhanced scrollbar styling for webkit
     &::-webkit-scrollbar {
         width: 6px;
     }
@@ -85,6 +122,10 @@
     &::-webkit-scrollbar-thumb {
         background: rgba(0, 0, 0, 0.2);
         border-radius: 3px;
+        
+        &:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
     }
 }
 
@@ -125,6 +166,7 @@
     border-bottom: 1px solid #f0f0f0;
     transition: all 0.2s ease;
     position: relative;
+    animation: slideIn 0.3s ease; // Moved here to fix Sass warning
 
     @media (max-width: 768px) {
         padding: 14px 16px;
@@ -145,8 +187,6 @@
     &:has(.group-badge) {
         border-left: 3px solid #25d366; // Green accent for groups
     }
-
-    animation: slideIn 0.3s ease;
 }
 
 .conversation-avatar {

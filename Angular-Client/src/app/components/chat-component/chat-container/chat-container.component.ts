@@ -191,11 +191,19 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
             };
 
             this.chatService.createGroupConversation(groupData).subscribe({
-                next: (newGroup) => {
+                next: (response: any) => {
+                    console.log('Group creation response:', response);
+                    
+                    // Extract the conversation data from the response
+                    const newGroup = response.data || response;
+                    
+                    // Add the new conversation to the local conversations list
+                    this.chatService.addConversationLocally(newGroup);
+                    
                     // Close modal and reset state
                     this.cancelGroupCreation();
 
-                    // Optionally, select the newly created group
+                    // Select the newly created group
                     this.selectedConversation = newGroup;
                     this.selectedUser = {} as UserObject; // Reset selected user
                     this.currentPage = this.chatPages.CHAT;

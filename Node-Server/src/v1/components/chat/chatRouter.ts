@@ -8,7 +8,8 @@ import {
     getUserConversations,
     getConversationMessages,
     removeParticipantFromGroup,
-    updateGroupInfo
+    updateGroupInfo,
+    deleteGroup
 } from "./chatController";
 import { validateGetConversations } from "./chatValidator";
 
@@ -32,5 +33,8 @@ router.post('/remove-participant', removeParticipantFromGroup);
 
 // Update group information
 router.put('/group/:conversationId', updateGroupInfo);
+
+// Delete group
+router.delete('/group/:conversationId', deleteGroup);
 
 export default router;

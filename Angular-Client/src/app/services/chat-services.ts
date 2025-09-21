@@ -150,6 +150,12 @@ export class ChatServices {
     );
   }
 
+  deleteGroup(conversationId: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${environment.apiUrl}/api/v1/chat/group/${conversationId}`,
+      { withCredentials: true }
+    );
+  }
+
   getConversationMessages(conversationId: string, pagination: MessagePagination): Observable<MessageObject[]> {
     return this.http.post<MessageObject[]>(`${environment.apiUrl}/api/v1/chat/conversation-messages`,
       { conversationId, paginationDetails: pagination },
@@ -181,6 +187,12 @@ export class ChatServices {
   addConversationLocally(conversation: ConversationObject): void {
     const currentConversations = this._conversationsSubject.value;
     const updatedConversations = [conversation, ...currentConversations];
+    this._conversationsSubject.next(updatedConversations);
+  }
+
+  removeConversationLocally(conversationId: string): void {
+    const currentConversations = this._conversationsSubject.value;
+    const updatedConversations = currentConversations.filter(conv => conv._id !== conversationId);
     this._conversationsSubject.next(updatedConversations);
   }
 
