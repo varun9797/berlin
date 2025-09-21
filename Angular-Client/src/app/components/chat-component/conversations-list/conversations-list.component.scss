@@ -301,6 +301,21 @@
     margin-left: 8px;
 }
 
+.admin-badge-list {
+    background: rgba(255, 215, 0, 0.15);
+    color: #B8860B;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+
+    @media (max-width: 768px) {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+}
+
 .unread-badge {
     background: #25d366 !important; // WhatsApp green
     color: white;

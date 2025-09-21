@@ -5,6 +5,17 @@
         "Node-Server"
     ],
     "scripts": {
-        "start": "cd Node-Server && npm install && npm run build && npm start"
+        "start": "cd Node-Server && npm install && npm run build && npm start",
+        "dev:backend": "cd Node-Server && npm run dev",
+        "dev:frontend": "cd Angular-Client && npm start",
+        "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+        "build:backend": "cd Node-Server && npm run build",
+        "build:frontend": "cd Angular-Client && npm run build",
+        "build": "npm run build:backend && npm run build:frontend",
+        "install:all": "npm install && cd Node-Server && npm install && cd ../Angular-Client && npm install",
+        "test:chat": "echo 'Testing chat functionality - Open http://localhost:4200 for frontend and http://localhost:3000 for backend API'"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
     }
 }

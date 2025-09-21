@@ -1,22 +1,52 @@
+// Ensure the component never exceeds viewport
+:host {
+    display: block;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    
+    // Desktop specific
+    @media (min-width: 769px) {
+        height: 100%;
+        max-height: 100%;
+    }
+}
+
 .chat-box {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    min-height: 0;
+    height: 100%; // Use parent height
+    min-height: 100%;
+    max-height: 100%; // Prevent overflow
     background: #ffffff;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     position: relative;
 
+    // Desktop specific fixes
+    @media (min-width: 769px) {
+        height: 100% !important;
+        max-height: 100% !important;
+        min-height: 100% !important;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
     @media (max-width: 768px) {
         height: 100vh;
         height: 100dvh; // Dynamic viewport height for mobile browsers
-        max-height: none;
+        max-height: 100vh;
+        max-height: 100dvh;
         border-radius: 0;
         box-shadow: none;
-        min-height: 100vh;
-        min-height: 100dvh;
+        position: fixed; // Fixed positioning on mobile
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
     }
 }
 
@@ -109,6 +139,51 @@
     flex: 1;
 }
 
+.group-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0; // Prevent shrinking
+}
+
+.rename-button, .manage-members-button {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}
+
+.rename-button::after {
+    content: '✏️';
+}
+
+.manage-members-button::after {
+    content: '👥';
+}
+
 .user-name {
     margin: 0;
     font-size: 18px;
@@ -154,17 +229,47 @@
     }
 }
 
+.admin-badge {
+    background: rgba(255, 215, 0, 0.2);
+    color: #FFD700;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+    font-weight: 600;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+
+    @media (max-width: 768px) {
+        font-size: 10px;
+        padding: 1px 4px;
+        margin-left: 6px;
+    }
+}
+
 .messages-section {
-    flex: 1;
+    flex: 1; // Take remaining space
     overflow-y: auto;
+    overflow-x: hidden;
     background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
     position: relative;
-    min-height: 0;
+    height: 0; // Force flex child to respect flex-basis
+    min-height: 0; // Allow shrinking
     -webkit-overflow-scrolling: touch; // Smooth scrolling on iOS
+
+    // Desktop specific constraints
+    @media (min-width: 769px) {
+        flex: 1 !important;
+        height: 0 !important; // Critical for desktop flex behavior
+        min-height: 0 !important;
+        max-height: none !important; // Remove conflicting max-height
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
 
     @media (max-width: 768px) {
         flex: 1;
-        height: 0; // Force flex child to respect parent height
+        height: 0; // Critical for mobile
+        min-height: 0;
     }
 
     &::-webkit-scrollbar {
@@ -178,6 +283,45 @@
     &::-webkit-scrollbar-thumb {
         background: rgba(0, 0, 0, 0.2);
         border-radius: 3px;
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+    }
+}
+
+.scroll-to-bottom-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 12px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    z-index: 10;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.6);
+    }
+
+    svg {
+        fill: currentColor;
+    }
+
+    @media (max-width: 768px) {
+        bottom: 16px;
+        right: 16px;
+        width: 36px;
+        height: 36px;
     }
 }
 
@@ -246,14 +390,26 @@
     color: #666;
     margin-bottom: 4px;
     padding: 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 
     .sender-name {
         font-weight: 600;
         color: #667eea;
     }
 
+    .admin-indicator {
+        font-size: 10px;
+        opacity: 0.8;
+    }
+
     @media (max-width: 768px) {
         font-size: 11px;
+        
+        .admin-indicator {
+            font-size: 9px;
+        }
     }
 }
 
@@ -317,14 +473,31 @@
     background: white;
     border-top: 1px solid #e0e0e0;
     padding: 16px 20px;
-    flex-shrink: 0; // Prevent shrinking
-    min-height: 80px; // Ensure minimum height
+    flex-shrink: 0; // Never shrink
+    flex-grow: 0; // Never grow
+    min-height: 80px; // Fixed minimum height
+    max-height: 120px; // Prevent from getting too tall
+    position: relative;
+    z-index: 100; // High z-index to stay above everything
+
+    // Desktop specific rules
+    @media (min-width: 769px) {
+        flex-shrink: 0 !important; // Force never shrink on desktop
+        flex-grow: 0 !important; // Force never grow on desktop
+        position: relative;
+        min-height: 80px;
+        max-height: 120px;
+        z-index: 100;
+    }
 
     @media (max-width: 768px) {
         padding: 12px 16px;
         min-height: 70px;
+        max-height: 100px;
         // Add safe area for devices with home indicator
         padding-bottom: max(12px, env(safe-area-inset-bottom));
+        position: relative; // Ensure it's in flow
+        flex-shrink: 0; // Critical - never shrink
     }
 }
 
@@ -417,19 +590,80 @@
     animation: slideIn 0.3s ease;
 }
 
+// Desktop specific optimizations
+@media (min-width: 769px) {
+    :host {
+        height: 100% !important; // Take full parent height
+        max-height: none !important;
+        overflow: hidden;
+        display: block;
+    }
+
+    .chat-box {
+        height: 100% !important; // Use parent height not viewport
+        max-height: none !important;
+        min-height: 100% !important;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .chat-header {
+        flex: 0 0 auto; // Fixed size header
+    }
+
+    .messages-section {
+        flex: 1 1 auto; // Expandable messages
+        height: 0; // Force flex behavior
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .message-input-container {
+        flex: 0 0 auto; // Fixed size input
+        height: auto;
+        min-height: 80px;
+        max-height: 120px;
+        background: white;
+        border-top: 1px solid #e0e0e0;
+    }
+}
+
 // Mobile specific optimizations
 @media (max-width: 480px) {
     .chat-box {
         font-size: 14px;
-        // Ensure full viewport usage
-        height: 100vh;
-        height: 100dvh;
+        // Ensure full viewport usage with fixed positioning
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
         z-index: 1000;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-header {
+        flex-shrink: 0; // Never shrink header
+    }
+
+    .messages-section {
+        flex: 1; // Take remaining space
+        height: 0; // Force flex behavior
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    .message-input-container {
+        flex-shrink: 0 !important; // Force input to stay visible
+        flex-grow: 0 !important;
+        position: relative !important; // Override any sticky positioning
     }
 
     .message-content {

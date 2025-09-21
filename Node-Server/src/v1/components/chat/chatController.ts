@@ -266,6 +266,32 @@ export const getUserConversations = async (req: AuthRequest, res: Response): Pro
                 $limit: Number(limit)
             },
             {
+                $addFields: {
+                    participants: {
+                        $map: {
+                            input: '$participants',
+                            as: 'participant',
+                            in: {
+                                $mergeObjects: [
+                                    '$$participant',
+                                    {
+                                        $arrayElemAt: [
+                                            {
+                                                $filter: {
+                                                    input: '$participantDetails',
+                                                    cond: { $eq: ['$$this._id', '$$participant.userId'] }
+                                                }
+                                            },
+                                            0
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
                 $project: {
                     type: 1,
                     name: 1,
@@ -274,12 +300,15 @@ export const getUserConversations = async (req: AuthRequest, res: Response): Pro
                     lastMessage: 1,
                     participants: {
                         $map: {
-                            input: '$participantDetails',
+                            input: '$participants',
                             as: 'participant',
                             in: {
                                 _id: '$$participant._id',
                                 username: '$$participant.username',
-                                email: '$$participant.email'
+                                email: '$$participant.email',
+                                role: '$$participant.role',
+                                joinedAt: '$$participant.joinedAt',
+                                isActive: '$$participant.isActive'
                             }
                         }
                     },

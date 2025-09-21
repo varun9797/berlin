@@ -197,6 +197,17 @@ export class ConversationsListComponent implements OnInit, OnDestroy {
         this.createGroupClick.emit();
     }
 
+    // Check if current user is admin of a specific group
+    isCurrentUserGroupAdmin(conversation: ConversationObject): boolean {
+        if (!conversation || conversation.type !== 'group') return false;
+        
+        const userParticipant = conversation.participants.find(
+            p => p._id === this.currentUserId
+        );
+        
+        return userParticipant?.role === 'admin';
+    }
+
     getConversationName(conversation: ConversationObject): string {
         if (conversation.type === 'group') {
             return conversation.name || 'Unnamed Group';

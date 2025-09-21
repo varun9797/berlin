@@ -92,6 +92,11 @@
                     </ng-template>
 
                     <div class="conversation-badges">
+                        <!-- Admin indicator for groups -->
+                        <div class="admin-badge-list" *ngIf="isConversation(item) && item.type === 'group' && isCurrentUserGroupAdmin(item)" title="You are an admin">
+                            👑 Admin
+                        </div>
+
                         <!-- Group member count -->
                         <div class="group-badge" *ngIf="isConversation(item) && item.type === 'group'">
                             <svg viewBox="0 0 24 24" width="12" height="12">

@@ -49,6 +49,7 @@ Angular-Client/typings
 # System files
 Angular-Client/.DS_Store
 Angular-Client/Thumbs.db
+node_modules
 
 /.env
 .vercel

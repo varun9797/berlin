@@ -11,10 +11,11 @@
         max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
-        height: calc(100vh - 40px);
-        height: calc(100dvh - 40px);
+        height: 100vh; // Changed from calc(100vh - 40px) to 100vh
+        height: 100dvh; // Changed from calc(100dvh - 40px) to 100dvh
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        box-sizing: border-box; // Include padding in height calculation
     }
 }
 
@@ -159,6 +160,14 @@
     background: white;
     border-radius: 0 0 12px 12px;
     min-height: 0; // Allow flex children to shrink
+    height: 0; // Force flex behavior
+
+    @media (min-width: 769px) {
+        flex: 1;
+        height: 0; // Critical for desktop flex behavior
+        min-height: 0;
+        overflow: hidden;
+    }
 
     @media (max-width: 768px) {
         border-radius: 0;
@@ -174,6 +183,14 @@
     flex-direction: column;
     overflow: hidden;
     min-height: 0; // Allow flex children to shrink
+    height: 0; // Force flex behavior
+
+    @media (min-width: 769px) {
+        flex: 1;
+        height: 0; // Critical for desktop
+        min-height: 0;
+        overflow: hidden;
+    }
 
     @media (max-width: 768px) {
         height: 100%;
