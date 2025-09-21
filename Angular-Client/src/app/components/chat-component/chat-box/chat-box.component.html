@@ -36,6 +36,7 @@
                     </svg>
                 </button>
 
+                <!-- Admin: Manage Members Button -->
                 <button class="manage-members-button" 
                         *ngIf="isGroupAdmin()" 
                         (click)="startManageMembers()" 
@@ -43,6 +44,17 @@
                         title="Click to manage group members">
                     <svg viewBox="0 0 24 24" width="18" height="18">
                         <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L19 5V4C19 2.9 18.1 2 17 2S15 2.9 15 4V5L13 7V9C13 9.6 13.4 10 14 10H20C20.6 10 21 9.6 21 9ZM8 7C9.66 7 11 8.34 11 10C11 11.66 9.66 13 8 13C6.34 13 5 11.66 5 10C5 8.34 6.34 7 8 7ZM8 14.2C10.5 14.2 15.2 15.5 15.2 18V20H.8V18C.8 15.5 5.5 14.2 8 14.2Z"/>
+                    </svg>
+                </button>
+
+                <!-- Non-Admin: View Members Button -->
+                <button class="view-members-button" 
+                        *ngIf="!isGroupAdmin()" 
+                        (click)="startViewMembers()" 
+                        aria-label="View members"
+                        title="View group members">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
                     </svg>
                 </button>
             </div>
@@ -138,14 +150,14 @@
     <div class="member-management-modal" *ngIf="isManagingMembers" (click)="cancelManageMembers()">
         <div class="modal-content large-modal" (click)="$event.stopPropagation()">
             <div class="modal-header">
-                <h3>Manage Group Members</h3>
+                <h3>{{ isViewingMembers ? 'Group Members' : 'Manage Group Members' }}</h3>
                 <button class="close-btn" (click)="cancelManageMembers()">&times;</button>
             </div>
             
             <div class="modal-body">
                 <!-- Current Members Section -->
                 <div class="members-section">
-                    <h4>Current Members ({{ selectedConversation?.participants?.length || 0 }})</h4>
+                    <h4>{{ isViewingMembers ? 'Members' : 'Current Members' }} ({{ selectedConversation?.participants?.length || 0 }})</h4>
                     <div class="members-list">
                         <div class="member-item" *ngFor="let participant of selectedConversation?.participants">
                             <div class="member-info">
@@ -159,9 +171,10 @@
                                     </span>
                                 </div>
                             </div>
+                            <!-- Remove button only for admins -->
                             <button 
                                 class="remove-member-btn" 
-                                *ngIf="participant._id !== currentUserId && !isMemberActionLoading"
+                                *ngIf="!isViewingMembers && participant._id !== currentUserId && !isMemberActionLoading"
                                 (click)="removeMember(participant._id)"
                                 title="Remove {{ participant.username }} from group">
                                 <svg viewBox="0 0 24 24" width="16" height="16">
@@ -172,8 +185,8 @@
                     </div>
                 </div>
 
-                <!-- Add Members Section -->
-                <div class="add-members-section" *ngIf="availableUsers.length > 0">
+                <!-- Add Members Section - Only for Admins -->
+                <div class="add-members-section" *ngIf="!isViewingMembers && availableUsers.length > 0">
                     <h4>Add New Members</h4>
                     <div class="loading" *ngIf="isLoadingUsers">Loading available users...</div>
                     
@@ -202,16 +215,22 @@
                     </div>
                 </div>
 
-                <div class="no-users-message" *ngIf="!isLoadingUsers && availableUsers.length === 0">
+                <div class="no-users-message" *ngIf="!isViewingMembers && !isLoadingUsers && availableUsers.length === 0">
                     <p>All available users are already in this group.</p>
+                </div>
+
+                <!-- View-only info message for non-admins -->
+                <div class="view-only-message" *ngIf="isViewingMembers">
+                    <p><i>👁️ You can view group members but cannot modify them. Only admins can add or remove members.</i></p>
                 </div>
             </div>
 
             <div class="modal-footer">
                 <button class="btn btn-secondary" (click)="cancelManageMembers()">Close</button>
+                <!-- Add button only for admins -->
                 <button 
                     class="btn btn-primary" 
-                    *ngIf="selectedUsersToAdd.length > 0"
+                    *ngIf="!isViewingMembers && selectedUsersToAdd.length > 0"
                     (click)="addSelectedUsers()"
                     [disabled]="isMemberActionLoading"
                     [class.loading]="isMemberActionLoading">

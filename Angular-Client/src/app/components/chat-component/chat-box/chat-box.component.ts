@@ -33,6 +33,7 @@ export class ChatBoxComponent implements OnInit, OnDestroy {
 
     // Group member management
     isManagingMembers = false;
+    isViewingMembers = false; // Track if user is in view-only mode
     availableUsers: UserObject[] = [];
     selectedUsersToAdd: string[] = [];
     isLoadingUsers = false;
@@ -379,8 +380,19 @@ export class ChatBoxComponent implements OnInit, OnDestroy {
         if (!this.isGroupChat || !this.selectedConversation) return;
         
         this.isManagingMembers = true;
+        this.isViewingMembers = false; // Admin mode
         this.selectedUsersToAdd = [];
         await this.loadAvailableUsers();
+    }
+
+    // View Members Method for Non-Admin Users
+    startViewMembers(): void {
+        if (!this.isGroupChat || !this.selectedConversation) return;
+        
+        this.isManagingMembers = true;
+        this.isViewingMembers = true; // View-only mode
+        this.selectedUsersToAdd = [];
+        // No need to load available users in view mode
     }
 
     private async loadAvailableUsers(): Promise<void> {
@@ -421,6 +433,7 @@ export class ChatBoxComponent implements OnInit, OnDestroy {
 
     cancelManageMembers(): void {
         this.isManagingMembers = false;
+        this.isViewingMembers = false; // Reset view mode
         this.selectedUsersToAdd = [];
         this.availableUsers = [];
     }
