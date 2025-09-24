@@ -5,12 +5,14 @@ import { Subscription } from 'rxjs';
 import { ChatServices } from '../../../services/chat-services';
 import { UserService } from '../../../services/user-service';
 import { InvitationService } from '../../../services/invitation-service';
+import { GameService } from '../../../services/game-service';
 import { messagePaginationConstants } from '../../../utils/const';
+import { WordGameComponent } from '../../word-game/word-game.component';
 
 @Component({
     selector: 'app-chat-box',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, WordGameComponent],
     templateUrl: './chat-box.component.html',
     styleUrl: './chat-box.component.scss'
 })
@@ -35,6 +37,9 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
     // Group delete functionality
     isDeletingGroup = false;
 
+    // Group leave functionality (for non-admin users)
+    isLeavingGroup = false;
+
     // Group member management
     isManagingMembers = false;
     isViewingMembers = false; // Track if user is in view-only mode
@@ -56,6 +61,16 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
         expiresInHours: 24
     };
 
+    // Game management
+    isGameSectionVisible = false;
+    isCreatingGame = false;
+    gameCreationForm = {
+        targetWord: '',
+        wordLength: 5,
+        maxAttempts: 6,
+        timeLimit: 300
+    };
+
     // Subscriptions
     private messageSubscription?: Subscription;
     private groupMessageSubscription?: Subscription;
@@ -69,7 +84,8 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
     constructor(
         private readonly chatService: ChatServices,
         private readonly userService: UserService,
-        private readonly invitationService: InvitationService
+        private readonly invitationService: InvitationService,
+        private readonly gameService: GameService
     ) { }
 
     ngOnInit(): void {
@@ -434,6 +450,55 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
             console.error('Error deleting group:', error);
             this.isDeletingGroup = false;
             alert('Failed to delete the group. Please try again.');
+        }
+    }
+
+    // Group leave functionality for non-admin users
+    async leaveGroupAsUser(): Promise<void> {
+        if (!this.isGroupChat || !this.selectedConversation || this.isGroupAdmin()) return;
+
+        const groupName = this.selectedConversation.name || 'this group';
+        
+        const confirmLeave = confirm(
+            `Leave Group: "${groupName}"\n\n` +
+            `Are you sure you want to leave this group?\n` +
+            `You will no longer receive messages from this group.`
+        );
+        
+        if (!confirmLeave) return;
+
+        this.isLeavingGroup = true;
+
+        try {
+            // Use the existing removeParticipantFromGroup method with current user's ID
+            this.chatService.removeParticipantFromGroup(
+                this.selectedConversation._id,
+                this.currentUserId
+            ).subscribe({
+                next: (response) => {
+                    console.log('Left group successfully:', response);
+                    
+                    // Remove the conversation from local list
+                    this.chatService.removeConversationLocally(this.selectedConversation!._id);
+                    
+                    // Navigate back to the conversations list
+                    this.backToList.emit();
+                    
+                    // Show success message
+                    alert(`You have left the group "${groupName}" successfully.`);
+                },
+                error: (error: any) => {
+                    console.error('Error leaving group:', error);
+                    alert('Failed to leave the group. Please try again.');
+                },
+                complete: () => {
+                    this.isLeavingGroup = false;
+                }
+            });
+        } catch (error) {
+            console.error('Error leaving group:', error);
+            this.isLeavingGroup = false;
+            alert('Failed to leave the group. Please try again.');
         }
     }
 
@@ -813,5 +878,65 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
     isInvitationExpired(expiresAt: string | Date): boolean {
         const date = typeof expiresAt === 'string' ? new Date(expiresAt) : expiresAt;
         return date < new Date();
+    }
+
+    // Game-related methods
+    toggleGameSection(): void {
+        this.isGameSectionVisible = !this.isGameSectionVisible;
+        if (this.isGameSectionVisible && this.selectedConversation?._id) {
+            // Load active game when section is opened
+            this.gameService.getActiveGame(this.selectedConversation._id).subscribe();
+        }
+    }
+
+    startCreateGame(): void {
+        this.isCreatingGame = true;
+        // Reset form
+        this.gameCreationForm = {
+            targetWord: '',
+            wordLength: 5,
+            maxAttempts: 6,
+            timeLimit: 300
+        };
+    }
+
+    cancelCreateGame(): void {
+        this.isCreatingGame = false;
+    }
+
+    createWordGame(): void {
+        if (!this.selectedConversation?._id) return;
+
+        const gameData = {
+            conversationId: this.selectedConversation._id,
+            ...(this.gameCreationForm.targetWord ? { targetWord: this.gameCreationForm.targetWord } : {}),
+            wordLength: this.gameCreationForm.wordLength,
+            maxAttempts: this.gameCreationForm.maxAttempts,
+            timeLimit: this.gameCreationForm.timeLimit
+        };
+
+        this.gameService.createWordGame(gameData).subscribe({
+            next: (response) => {
+                console.log('Game created:', response);
+                this.isCreatingGame = false;
+                this.isGameSectionVisible = true;
+                // Refresh game data for this conversation
+                if (this.selectedConversation?._id) {
+                    this.gameService.refreshCurrentGame(this.selectedConversation._id);
+                }
+            },
+            error: (error) => {
+                console.error('Error creating game:', error);
+                alert(error.error?.message || 'Failed to create game');
+            }
+        });
+    }
+
+    canCreateGame(): boolean {
+        return this.gameCreationForm.wordLength > 0 && 
+               this.gameCreationForm.maxAttempts > 0 && 
+               this.gameCreationForm.timeLimit > 0 &&
+               (!this.gameCreationForm.targetWord || 
+                this.gameCreationForm.targetWord.length === this.gameCreationForm.wordLength);
     }
 }

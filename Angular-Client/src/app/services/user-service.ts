@@ -28,9 +28,25 @@ export class UserService {
         // save the token in local storage
         if (response.body && response.body.token) {
           this.tokenService.setToken(response.body.token);
-          // Also store user data if available
+          
+          // Extract user info from token and store it
+          const username = this.tokenService.getUserNameFromToken();
+          const userId = this.tokenService.getUserIdFromToken();
+          
+          if (username && userId) {
+            const userFromToken = {
+              _id: userId,
+              userId: userId,
+              username: username
+            };
+            this.setCurrentUser(userFromToken);
+            console.log('User info extracted from token and stored:', userFromToken);
+          }
+          
+          // Also store user data from response if available
           if (response.body.user) {
-            localStorage.setItem('currentUser', JSON.stringify(response.body.user));
+            this.setCurrentUser(response.body.user);
+            console.log('User info from response stored:', response.body.user);
           }
         }
       })
@@ -39,7 +55,46 @@ export class UserService {
 
   getCurrentUserId(): string {
     const user = this.getCurrentUser();
-    return user?._id || user?.userId || '';
+    if (user?._id || user?.userId) {
+      return user._id || user.userId || '';
+    }
+    
+    // Fallback to token if no user in localStorage
+    const userIdFromToken = this.tokenService.getUserIdFromToken();
+    if (userIdFromToken) {
+      // Update localStorage with token data
+      const userFromToken = {
+        _id: userIdFromToken,
+        userId: userIdFromToken,
+        username: this.tokenService.getUserNameFromToken() || ''
+      };
+      this.setCurrentUser(userFromToken);
+      return userIdFromToken;
+    }
+    
+    return '';
+  }
+
+  getCurrentUsername(): string {
+    const user = this.getCurrentUser();
+    if (user?.username) {
+      return user.username;
+    }
+    
+    // Fallback to token if no user in localStorage
+    const usernameFromToken = this.tokenService.getUserNameFromToken();
+    if (usernameFromToken) {
+      // Update localStorage with token data
+      const userFromToken = {
+        _id: this.tokenService.getUserIdFromToken() || '',
+        userId: this.tokenService.getUserIdFromToken() || '',
+        username: usernameFromToken
+      };
+      this.setCurrentUser(userFromToken);
+      return usernameFromToken;
+    }
+    
+    return '';
   }
 
   getCurrentUser(): any {
@@ -58,6 +113,27 @@ export class UserService {
 
   clearCurrentUser(): void {
     localStorage.removeItem('currentUser');
+  }
+
+  // Initialize user data from token if available
+  initializeFromToken(): void {
+    const token = this.tokenService.getToken();
+    if (token && !this.tokenService.isTokenExpired(token)) {
+      const username = this.tokenService.getUserNameFromToken();
+      const userId = this.tokenService.getUserIdFromToken();
+      
+      // Only set if we don't already have user data
+      const currentUser = this.getCurrentUser();
+      if (!currentUser && username && userId) {
+        const userFromToken = {
+          _id: userId,
+          userId: userId,
+          username: username
+        };
+        this.setCurrentUser(userFromToken);
+        console.log('User data initialized from token:', userFromToken);
+      }
+    }
   }
 
 }

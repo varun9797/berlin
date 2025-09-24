@@ -1,7 +1,8 @@
 export const ShcemaConstants = {
     USER_SCHEMA: 'User',
     CONVERSATION_SCHEMA: 'Conversation',
-    MESSAGE_SCHEMA: 'Message'
+    MESSAGE_SCHEMA: 'Message',
+    WORD_GAME_SCHEMA: 'WordGame'
 }
 
 export const JWT_CONSTANTS = {

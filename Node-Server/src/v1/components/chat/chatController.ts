@@ -452,17 +452,28 @@ export const removeParticipantFromGroup = async (req: AuthRequest, res: Response
             return;
         }
 
-        // Find the conversation and check if user is admin
+        // Find the conversation
         const conversation = await ConversationModel.findOne({
             _id: conversationId,
             type: 'group',
-            'participants.userId': userId,
-            'participants.role': 'admin'
+            'participants.userId': userId
         });
 
         if (!conversation) {
+            res.status(httpStatusCodes.NOT_FOUND).json({
+                message: "Conversation not found or you are not a member"
+            });
+            return;
+        }
+
+        // Check if user is admin or trying to remove themselves
+        const currentUser = conversation.participants.find(p => p.userId.toString() === userId);
+        const isSelfRemoval = participantId === userId;
+        const isAdmin = currentUser?.role === 'admin';
+
+        if (!isAdmin && !isSelfRemoval) {
             res.status(httpStatusCodes.FORBIDDEN).json({
-                message: "Only group admins can remove participants"
+                message: "Only group admins can remove other participants, or you can remove yourself"
             });
             return;
         }

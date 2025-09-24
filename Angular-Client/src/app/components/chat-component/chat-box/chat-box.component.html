@@ -70,6 +70,18 @@
                     </svg>
                 </button>
 
+                <!-- Game Toggle Button (Group Only) -->
+                <button class="game-toggle-button" 
+                        *ngIf="isGroupChat" 
+                        (click)="toggleGameSection()" 
+                        [class.active]="isGameSectionVisible"
+                        aria-label="Toggle game section"
+                        title="Word guessing game">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                        <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M7.5,13.5L9,12L7.5,10.5L12,6L16.5,10.5L15,12L16.5,13.5L12,18L7.5,13.5Z"/>
+                    </svg>
+                </button>
+
                 <!-- Non-Admin: View Members Button -->
                 <button class="view-members-button" 
                         *ngIf="!isGroupAdmin()" 
@@ -78,6 +90,18 @@
                         title="View group members">
                     <svg viewBox="0 0 24 24" width="18" height="18">
                         <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                </button>
+
+                <!-- Non-Admin: Leave Group Button -->
+                <button class="leave-group-button" 
+                        *ngIf="!isGroupAdmin()" 
+                        (click)="leaveGroupAsUser()" 
+                        [disabled]="isLeavingGroup"
+                        aria-label="Leave group"
+                        title="Leave this group">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                        <path d="M17,7L15.59,5.59L9,12.17L5.41,8.58L4,10L9,15L17,7M21,3C21,1.89 20.1,1 19,1H5A2,2 0 0,0 3,3V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V3Z"/>
                     </svg>
                 </button>
             </div>
@@ -118,6 +142,91 @@
                 <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
             </svg>
         </button>
+    </div>
+
+    <!-- Game Section (Group Only) -->
+    <div class="game-section" *ngIf="isGameSectionVisible && isGroupChat">
+        <!-- Create Game Button -->
+        <div class="game-controls" *ngIf="!isCreatingGame">
+            <button class="btn-create-game" (click)="startCreateGame()">
+                🎮 Create Word Game
+            </button>
+        </div>
+
+        <!-- Create Game Form -->
+        <div class="create-game-form" *ngIf="isCreatingGame">
+            <div class="form-header">
+                <h4>Create Word Game</h4>
+                <button class="close-btn" (click)="cancelCreateGame()">&times;</button>
+            </div>
+            
+            <div class="form-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="targetWord">Target Word (Optional)</label>
+                        <input 
+                            type="text" 
+                            id="targetWord"
+                            [(ngModel)]="gameCreationForm.targetWord"
+                            [maxlength]="gameCreationForm.wordLength"
+                            placeholder="Leave empty for random word"
+                            class="form-input">
+                        <small class="form-note">Leave empty to use a random word</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="wordLength">Word Length</label>
+                        <input 
+                            type="number" 
+                            id="wordLength"
+                            [(ngModel)]="gameCreationForm.wordLength"
+                            min="3" 
+                            max="10"
+                            class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="maxAttempts">Max Attempts</label>
+                        <input 
+                            type="number" 
+                            id="maxAttempts"
+                            [(ngModel)]="gameCreationForm.maxAttempts"
+                            min="3" 
+                            max="10"
+                            class="form-input">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="timeLimit">Time Limit (seconds)</label>
+                        <input 
+                            type="number" 
+                            id="timeLimit"
+                            [(ngModel)]="gameCreationForm.timeLimit"
+                            min="60" 
+                            max="1800"
+                            class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-secondary" (click)="cancelCreateGame()">Cancel</button>
+                    <button 
+                        class="btn btn-primary" 
+                        (click)="createWordGame()"
+                        [disabled]="!canCreateGame()">
+                        Create Game
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Word Game Component -->
+        <app-word-game 
+            *ngIf="!isCreatingGame"
+            [conversationId]="selectedConversation?._id || ''">
+        </app-word-game>
     </div>
 
     <div class="message-input-container">

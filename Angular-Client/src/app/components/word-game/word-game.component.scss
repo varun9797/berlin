@@ -1,0 +1,359 @@
+.word-game-container {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 10px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e9ecef;
+
+  h3 {
+    margin: 0;
+    color: #495057;
+    font-size: 1.2rem;
+  }
+
+  .game-info {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+
+    &.status-waiting {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+
+    &.status-active {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    &.status-completed {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+  }
+
+  .players-count {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+  }
+}
+
+.game-messages {
+  margin-bottom: 20px;
+
+  .message {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+
+    &.waiting {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      color: #856404;
+    }
+
+    &.active {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+      color: #155724;
+    }
+
+    &.completed {
+      background: #d1ecf1;
+      border-left: 4px solid #17a2b8;
+      color: #0c5460;
+    }
+
+    p {
+      margin: 5px 0;
+      
+      &:first-child {
+        margin-top: 0;
+      }
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.game-controls {
+  margin-bottom: 20px;
+
+  .btn-join, .btn-start, .btn-submit {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(45deg, #0056b3, #004085);
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
+
+  .btn-start {
+    background: linear-gradient(45deg, #28a745, #1e7e34);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(45deg, #1e7e34, #155724);
+    }
+  }
+
+  .guess-input {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+
+    .word-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 12px;
+      border: 2px solid #ced4da;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-align: center;
+
+      &:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+      }
+
+      &:disabled {
+        background: #f8f9fa;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .winner-message {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #28a745;
+    padding: 15px;
+    background: #d4edda;
+    border-radius: 8px;
+    border: 2px solid #28a745;
+  }
+}
+
+.my-attempts {
+  margin-bottom: 20px;
+
+  h4 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 1rem;
+  }
+
+  .attempts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .attempt-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .attempt-number {
+      font-weight: 600;
+      color: #6c757d;
+      min-width: 25px;
+    }
+
+    .attempt-letters {
+      display: flex;
+      gap: 4px;
+    }
+
+    .letter-tile {
+      width: 35px;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 1rem;
+      text-transform: uppercase;
+
+      &.letter-correct {
+        background: #28a745;
+        color: white;
+      }
+
+      &.letter-present {
+        background: #ffc107;
+        color: #212529;
+      }
+
+      &.letter-absent {
+        background: #6c757d;
+        color: white;
+      }
+    }
+  }
+}
+
+.players-section {
+  h4 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 1rem;
+  }
+
+  .players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .player-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+
+    .player-name {
+      font-weight: 600;
+      color: #495057;
+    }
+
+    .player-stats {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.9rem;
+
+      .attempts {
+        color: #6c757d;
+      }
+
+      .winner-badge {
+        font-size: 1rem;
+      }
+
+      .score {
+        color: #28a745;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+.message-toast {
+  padding: 10px 15px;
+  border-radius: 6px;
+  margin-top: 10px;
+  font-weight: 500;
+
+  &.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+
+  &.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+
+  &.info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+  }
+}
+
+.no-game {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+// Mobile responsiveness
+@media (max-width: 768px) {
+  .word-game-container {
+    padding: 15px;
+    margin: 5px 0;
+  }
+
+  .game-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+
+    .game-info {
+      align-self: flex-end;
+    }
+  }
+
+  .guess-input {
+    flex-direction: column;
+
+    .word-input {
+      min-width: 100%;
+    }
+
+    .btn-submit {
+      width: 100%;
+    }
+  }
+
+  .letter-tile {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .player-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+}
