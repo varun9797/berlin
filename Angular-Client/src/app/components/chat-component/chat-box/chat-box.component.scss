@@ -144,6 +144,155 @@
     align-items: center;
     gap: 8px;
     flex-shrink: 0; // Prevent shrinking
+    position: relative; // For mobile dropdown positioning
+
+    // Desktop: Show all buttons
+    .desktop-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        @media (max-width: 768px) {
+            display: none; // Hide desktop actions on mobile
+        }
+    }
+
+    // Mobile: Show only menu toggle
+    .mobile-menu-toggle {
+        display: none;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        @media (max-width: 768px) {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        &:hover, &.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        svg {
+            fill: currentColor;
+        }
+    }
+
+    // Mobile dropdown menu
+    .mobile-dropdown-menu {
+        display: none;
+        
+        @media (max-width: 768px) {
+            display: block;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            min-width: 200px;
+            z-index: 1000;
+            overflow: hidden;
+            margin-top: 8px;
+            animation: slideDown 0.2s ease-out;
+        }
+
+        .mobile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: none;
+            background: white;
+            color: #374151;
+            font-size: 14px;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            &:hover {
+                background-color: #f9fafb;
+            }
+
+            &:active {
+                background-color: #f3f4f6;
+            }
+
+            &.danger {
+                color: #dc2626;
+
+                &:hover {
+                    background-color: #fef2f2;
+                }
+
+                svg {
+                    fill: #dc2626;
+                }
+            }
+
+            &.game-menu-item {
+                &.active {
+                    background-color: #f0f9ff;
+                    color: #0369a1;
+                }
+                
+                .game-badge {
+                    color: #059669;
+                    font-size: 18px;
+                    margin-left: auto;
+                }
+            }
+
+            svg {
+                fill: currentColor;
+                flex-shrink: 0;
+            }
+
+            span {
+                flex-grow: 1;
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                
+                &:hover {
+                    background-color: white;
+                }
+            }
+        }
+
+        .menu-separator {
+            height: 1px;
+            background-color: #e5e7eb;
+            margin: 8px 0;
+        }
+    }
+}
+
+// CSS Animation for mobile dropdown
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .rename-button, .manage-members-button, .view-members-button, .invite-members-button, .delete-group-button, .leave-group-button {
@@ -1095,6 +1244,9 @@
     background: #fafafa;
     
     // Enhanced scrollbar styling
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    
     &::-webkit-scrollbar {
         width: 6px;
     }
@@ -1111,10 +1263,6 @@
             background: rgba(0, 0, 0, 0.3);
         }
     }
-
-    // Firefox scrollbar styling
-    scrollbar-width: thin;
-    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
     
     // Ensure proper scrolling behavior
     min-height: 0;

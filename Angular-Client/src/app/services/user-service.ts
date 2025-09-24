@@ -136,4 +136,10 @@ export class UserService {
     }
   }
 
+  // Logout user
+  logout(): void {
+    this.isAuthenticated = false;
+    this.clearCurrentUser();
+    // The token service will handle token removal and navigation
+  }
 }

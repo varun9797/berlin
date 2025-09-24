@@ -1,13 +1,16 @@
 import { Component, EventEmitter, Input, Output, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ChatServices } from '../../../services/chat-services';
 import { UserService } from '../../../services/user-service';
+import { TokenService } from '../../../services/token-service';
 import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-conversations-list',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FormsModule],
     templateUrl: './conversations-list.component.html',
     styleUrl: './conversations-list.component.scss'
 })
@@ -16,24 +19,62 @@ export class ConversationsListComponent implements OnInit, OnDestroy {
     onlineUsers: UserObject[] = [];
     combinedList: (ConversationObject | UserObject)[] = [];
 
-    @Input() currentUserId: string = '';
-    @Input() currentUserName: string = '';
+    // Remove @Input decorators since we'll get these from services
+    currentUserId: string = '';
+    currentUserName: string = '';
+    
+    // Keep @Output for compatibility, but also handle routing internally
     @Output() conversationSelected = new EventEmitter<ConversationObject>();
     @Output() userSelected = new EventEmitter<UserObject>();
     @Output() createGroupClick = new EventEmitter<void>();
+
+    // Create group modal state
+    showCreateGroupModal: boolean = false;
+    isCreatingGroup: boolean = false;
+    groupCreationData: CreateGroupRequest = {
+        name: '',
+        participantIds: [],
+        description: ''
+    };
+    selectedUsers: string[] = [];
 
     private subscriptions: Subscription[] = [];
 
     constructor(
         private chatService: ChatServices,
-        private userService: UserService
+        private userService: UserService,
+        private tokenService: TokenService,
+        private router: Router
     ) { }
 
     ngOnInit(): void {
-        // Set current user ID if not provided
+        // Get current user information from token service
+        this.currentUserId = this.tokenService.getUserIdFromToken() || '';
+        this.currentUserName = this.tokenService.getUserNameFromToken() || '';
+
         if (!this.currentUserId) {
-            this.currentUserId = this.userService.getCurrentUserId();
+            console.error('No user ID found, redirecting to login');
+            this.router.navigate(['/login']);
+            return;
         }
+
+        // Subscribe to authentication state changes
+        const authSub = this.tokenService.isAuthenticated$.subscribe(isAuth => {
+            if (!isAuth) {
+                console.log('Authentication state changed to false - user logged out');
+                // Component will be destroyed when navigating to login
+                return;
+            }
+        });
+        this.subscriptions.push(authSub);
+
+        // Initialize chat service connection
+        this.chatService.connect(this.currentUserId);
+        this.chatService.registeruser({
+            userId: this.currentUserId,
+            username: this.currentUserName,
+            isOnline: true
+        });
 
         this.loadConversations();
         this.loadOnlineUsers();
@@ -167,12 +208,21 @@ export class ConversationsListComponent implements OnInit, OnDestroy {
     }
 
     onConversationClick(conversation: ConversationObject): void {
+        // Emit for compatibility
         this.conversationSelected.emit(conversation);
         this.chatService.markConversationAsRead(conversation._id);
+        
+        // Navigate to conversation route
+        this.router.navigate(['/chat', conversation._id]);
     }
 
     onUserClick(user: UserObject): void {
+        // Emit for compatibility
         this.userSelected.emit(user);
+        
+        // For one-to-one chats, we need to find or create a conversation
+        // For now, let's create a temporary route with user ID
+        this.router.navigate(['/chat', `user-${user.userId}`]);
     }
 
     onItemClick(item: any): void {
@@ -194,7 +244,17 @@ export class ConversationsListComponent implements OnInit, OnDestroy {
     }
 
     onCreateGroupClick(): void {
-        this.createGroupClick.emit();
+        this.showCreateGroupModal = true;
+        this.resetCreateGroupForm();
+    }
+
+    resetCreateGroupForm(): void {
+        this.groupCreationData = {
+            name: '',
+            participantIds: [],
+            description: ''
+        };
+        this.selectedUsers = [];
     }
 
     // Check if current user is admin of a specific group
@@ -331,5 +391,89 @@ export class ConversationsListComponent implements OnInit, OnDestroy {
 
     trackByConversationId(index: number, conversation: ConversationObject): string {
         return conversation._id;
+    }
+
+    getCurrentUserInitials(): string {
+        if (!this.currentUserName) return '?';
+        
+        const names = this.currentUserName.trim().split(' ');
+        if (names.length >= 2) {
+            return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+        }
+        return names[0].substring(0, 2).toUpperCase();
+    }
+
+    onLogout(): void {
+        this.tokenService.logout('User logged out manually');
+    }
+
+    // Methods for group creation
+    openCreateGroupModal(): void {
+        this.showCreateGroupModal = true;
+    }
+
+    closeCreateGroupModal(): void {
+        this.showCreateGroupModal = false;
+        this.resetGroupCreationData();
+    }
+
+    private resetGroupCreationData(): void {
+        this.groupCreationData = {
+            name: '',
+            participantIds: [],
+            description: ''
+        };
+        this.selectedUsers = [];
+    }
+
+    onGroupNameChange(name: string): void {
+        this.groupCreationData.name = name;
+    }
+
+    onGroupDescriptionChange(description: string): void {
+        this.groupCreationData.description = description;
+    }
+
+    toggleUserSelection(userId: string): void {
+        const index = this.selectedUsers.indexOf(userId);
+        if (index === -1) {
+            this.selectedUsers.push(userId);
+        } else {
+            this.selectedUsers.splice(index, 1);
+        }
+
+        // Update participantIds in groupCreationData
+        this.groupCreationData.participantIds = [...this.selectedUsers];
+    }
+
+    isUserSelected(userId: string): boolean {
+        return this.selectedUsers.includes(userId);
+    }
+
+    createGroup(): void {
+        if (!this.groupCreationData.name) {
+            return; // Don't allow empty group names
+        }
+
+        this.isCreatingGroup = true;
+
+        // Create the group using the chat service
+        this.chatService.createGroupConversation(this.groupCreationData).subscribe({
+            next: (response: ConversationObject) => {
+                console.log('Group created successfully:', response);
+                this.isCreatingGroup = false;
+                this.closeCreateGroupModal();
+                
+                // Refresh conversations list
+                this.loadConversations();
+                
+                // Navigate to the new group chat
+                this.router.navigate(['/chat', response._id]);
+            },
+            error: (error: any) => {
+                console.error('Error creating group:', error);
+                this.isCreatingGroup = false;
+            }
+        });
     }
 }

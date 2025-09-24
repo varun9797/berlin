@@ -1,22 +1,21 @@
 import { inject } from "@angular/core";
 import { CanActivateFn, Router } from "@angular/router";
-import { UserService } from "../services/user-service";
-import { constants } from "../utils/const";
 import { TokenService } from "../services/token-service";
 
 export const authGuard: CanActivateFn = (route, state) => {
     const router = inject(Router);
     const tokenService = inject(TokenService);
-    const userService = inject(UserService);
 
-    // Here you would typically check if the user is authenticated
-    // For example, by checking a token in local storage or a user service
-    // const isAuthenticated = false; // Replace with actual authentication check
-    let isAuthenticated = tokenService.isTokenExpired(tokenService.getToken() || '') === false;
+    // Check if user is authenticated with a valid, non-expired token
+    const isAuthenticated = tokenService.isAuthenticated();
+    
     if (!isAuthenticated) {
-        console.log("User not authenticated, redirecting to login");
-        router.navigate(['/login']); // todo keep this in seperate constant file
+        console.log("User not authenticated or token expired, redirecting to login");
+        // The tokenService.logout() will handle the navigation, but let's be explicit
+        tokenService.logout('Auth guard: Invalid or expired token');
         return false;
     }
+    
+    console.log("User authenticated, allowing access to protected route");
     return true;
 };

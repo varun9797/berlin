@@ -1,9 +1,11 @@
 import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnInit, OnDestroy, OnChanges, SimpleChanges, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ChatServices } from '../../../services/chat-services';
 import { UserService } from '../../../services/user-service';
+import { TokenService } from '../../../services/token-service';
 import { InvitationService } from '../../../services/invitation-service';
 import { GameService } from '../../../services/game-service';
 import { messagePaginationConstants } from '../../../utils/const';
@@ -17,9 +19,13 @@ import { WordGameComponent } from '../../word-game/word-game.component';
     styleUrl: './chat-box.component.scss'
 })
 export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
-    @Input() selectedUser!: UserObject;
-    @Input() selectedConversation?: ConversationObject | null;
-    @Input() currentUserId!: string;
+    // Remove @Input decorators and get data from route params
+    selectedUser!: UserObject;
+    selectedConversation?: ConversationObject | null;
+    currentUserId!: string;
+    currentUserName!: string;
+    
+    // Keep @Output for compatibility
     @Output() backToList = new EventEmitter<void>();
 
     // Message handling
@@ -72,6 +78,9 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
         timeLimit: 300
     };
 
+    // Mobile menu management
+    showMobileMenu = false;
+
     // Subscriptions
     private messageSubscription?: Subscription;
     private groupMessageSubscription?: Subscription;
@@ -85,15 +94,90 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
     constructor(
         private readonly chatService: ChatServices,
         private readonly userService: UserService,
+        private readonly tokenService: TokenService,
         private readonly invitationService: InvitationService,
-        private readonly gameService: GameService
+        private readonly gameService: GameService,
+        private readonly router: Router,
+        private readonly route: ActivatedRoute
     ) { }
 
     ngOnInit(): void {
-        this.initializeChatMode();
-        this.loadConversationMessages();
+        // Get current user information
+        this.currentUserId = this.tokenService.getUserIdFromToken() || '';
+        this.currentUserName = this.tokenService.getUserNameFromToken() || '';
+
+        if (!this.currentUserId) {
+            console.error('No user ID found, redirecting to login');
+            this.router.navigate(['/login']);
+            return;
+        }
+
+        // Initialize chat service connection
+        this.chatService.connect(this.currentUserId);
+        this.chatService.registeruser({
+            userId: this.currentUserId,
+            username: this.currentUserName,
+            isOnline: true
+        });
+
+        // Subscribe to route parameter changes
+        this.route.params.subscribe(params => {
+            const conversationId = params['conversationId'];
+            this.loadConversationData(conversationId);
+        });
+
         this.setupMessageListener();
         this.setupScrollMonitoring();
+    }
+
+    private async loadConversationData(conversationId: string): Promise<void> {
+        if (conversationId.startsWith('user-')) {
+            // Handle one-to-one chat with user ID
+            const userId = conversationId.replace('user-', '');
+            await this.loadUserChat(userId);
+        } else {
+            // Handle group conversation
+            await this.loadGroupConversation(conversationId);
+        }
+
+        this.initializeChatMode();
+        this.loadConversationMessages();
+    }
+
+    private async loadUserChat(userId: string): Promise<void> {
+        // Load user information
+        try {
+            const users = await this.userService.getOnlineUsers().toPromise();
+            this.selectedUser = users?.find(u => u.userId === userId) || {
+                userId: userId,
+                username: 'Unknown User',
+                isOnline: false
+            };
+        } catch (error) {
+            console.error('Error loading user:', error);
+            this.selectedUser = {
+                userId: userId,
+                username: 'Unknown User',
+                isOnline: false
+            };
+        }
+    }
+
+    private async loadGroupConversation(conversationId: string): Promise<void> {
+        // Load conversation information
+        try {
+            const response = await this.chatService.getUserConversations().toPromise();
+            this.selectedConversation = response?.data.find(c => c._id === conversationId) || null;
+            
+            if (!this.selectedConversation) {
+                console.error('Conversation not found:', conversationId);
+                this.router.navigate(['/chat']); // Redirect back to list
+                return;
+            }
+        } catch (error) {
+            console.error('Error loading conversation:', error);
+            this.router.navigate(['/chat']); // Redirect back to list
+        }
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -183,22 +267,18 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
     private setupMessageListener(): void {
         // Private messages listener
         this.messageSubscription = this.chatService.newMessageBehaviorSubject.subscribe(msg => {
-            if (msg && !this.isGroupChat) {
+            if (msg && !this.isGroupChat && msg.senderId !== this.currentUserId) {
                 msg.sender = msg.senderId;
                 this.messages.push(msg);
                 // Only auto-scroll if user is near bottom (for incoming messages)
-                if (msg.senderId !== this.currentUserId) {
-                    this.conditionalScrollToBottom();
-                } else {
-                    this.scrollToBottom(); // Always scroll for own messages
-                }
+                this.conditionalScrollToBottom();
             }
         });
 
         // Group messages listener
         this.groupMessageSubscription = this.chatService.groupMessageSubject.subscribe(msg => {
             if (msg && this.isGroupChat && this.selectedConversation) {
-                if (msg.conversationId === this.selectedConversation._id) {
+                if (msg.conversationId === this.selectedConversation._id && msg.senderId !== this.currentUserId) {
                     // Transform group message to display format
                     const displayMessage = {
                         _id: Date.now().toString(), // Temporary ID
@@ -210,11 +290,7 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
                     };
                     this.messages.push(displayMessage);
                     // Only auto-scroll if user is near bottom (for incoming messages)
-                    if (msg.senderId !== this.currentUserId) {
-                        this.conditionalScrollToBottom();
-                    } else {
-                        this.scrollToBottom(); // Always scroll for own messages
-                    }
+                    this.conditionalScrollToBottom();
                 }
             }
         });
@@ -223,13 +299,26 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
     sendMessage(): void {
         if (!this.isMessageValid()) return;
 
+        const messageContent = this.message.trim();
+
         if (this.isGroupChat && this.selectedConversation) {
             // Send group message
             const groupMessageObj: GroupMessageObj = {
                 conversationId: this.selectedConversation._id,
                 senderId: this.currentUserId,
-                message: this.message.trim()
+                message: messageContent
             };
+
+            // Optimistically add message to UI immediately
+            const optimisticMessage = {
+                _id: Date.now().toString(), // Temporary ID
+                senderId: this.currentUserId,
+                sender: this.currentUserId,
+                content: messageContent,
+                timestamp: new Date(),
+                conversationId: this.selectedConversation._id
+            };
+            this.messages.push(optimisticMessage);
 
             this.chatService.sendGroupMessage(groupMessageObj);
         } else {
@@ -237,8 +326,19 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
             const messageObj: SendMessageObj = {
                 senderId: this.currentUserId,
                 reciverId: this.selectedUser.userId,
-                message: this.message.trim()
+                message: messageContent
             };
+
+            // Optimistically add message to UI immediately
+            const optimisticMessage = {
+                _id: Date.now().toString(), // Temporary ID
+                senderId: this.currentUserId,
+                sender: this.currentUserId,
+                content: messageContent,
+                timestamp: new Date(),
+                reciverId: this.selectedUser.userId
+            };
+            this.messages.push(optimisticMessage);
 
             this.chatService.sendMessage(messageObj);
         }
@@ -306,7 +406,11 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
     }
 
     onBackClick(): void {
+        // Emit for compatibility
         this.backToList.emit();
+        
+        // Navigate back to chat list
+        this.router.navigate(['/chat']);
     }
 
     trackByMessageId(index: number, message: any): any {
@@ -1047,5 +1151,23 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
                this.gameCreationForm.timeLimit > 0 &&
                (!this.gameCreationForm.targetWord || 
                 this.gameCreationForm.targetWord.length === this.gameCreationForm.wordLength);
+    }
+
+    // Mobile menu methods
+    toggleMobileMenu(): void {
+        this.showMobileMenu = !this.showMobileMenu;
+    }
+
+    hideMobileMenu(): void {
+        this.showMobileMenu = false;
+    }
+
+    // Close mobile menu when clicking outside
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: MouseEvent): void {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.group-actions')) {
+            this.showMobileMenu = false;
+        }
     }
 }
