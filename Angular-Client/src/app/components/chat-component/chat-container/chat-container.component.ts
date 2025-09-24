@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { ChatServices } from '../../../services/chat-services';
 import { TokenService } from '../../../services/token-service';
 import { TabVisibilityService } from '../../../services/tab-visibility-service';
+import { GameService } from '../../../services/game-service';
 import { chatPages } from '../../../utils/const';
 import { ChatBoxComponent } from '../chat-box/chat-box.component';
 import { ConversationsListComponent } from '../conversations-list/conversations-list.component';
@@ -48,7 +49,8 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
     constructor(
         private readonly chatService: ChatServices,
         private readonly tokenService: TokenService,
-        private readonly tabVisibilityService: TabVisibilityService
+        private readonly tabVisibilityService: TabVisibilityService,
+        private readonly gameService: GameService
     ) { }
 
     ngOnInit(): void {
@@ -244,8 +246,11 @@ export class ChatContainerComponent implements OnInit, OnDestroy {
             .join('')
             .toUpperCase()
             .slice(0, 2);
-    } ngOnDestroy(): void {
+    }
+
+    ngOnDestroy(): void {
         this.chatService.disconnect();
+        this.gameService.disconnect();
         this.tabVisibilitySubscription?.unsubscribe();
     }
 }

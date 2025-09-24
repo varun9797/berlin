@@ -17,12 +17,14 @@ export class ChatServices {
   private _conversationsSubject = new BehaviorSubject<ConversationObject[]>([]);
   private _typingSubject = new Subject<TypingIndicator>();
   private _onlineUsersSubject = new BehaviorSubject<UserObject[]>([]);
+  private _gameEventSubject = new Subject<any>();
 
   readonly newMessageBehaviorSubject = this._newMessageBehaviorSubject.asObservable();
   readonly groupMessageSubject = this._groupMessageSubject.asObservable();
   readonly conversationsSubject = this._conversationsSubject.asObservable();
   readonly typingSubject = this._typingSubject.asObservable();
   readonly onlineUsersSubject = this._onlineUsersSubject.asObservable();
+  readonly gameEventSubject = this._gameEventSubject.asObservable();
 
   constructor(private http: HttpClient, private tokenService: TokenService) {
   }
@@ -72,6 +74,17 @@ export class ChatServices {
       this._typingSubject.next(data);
     });
 
+    // Game event listeners
+    this.socket.on('gameEvent', (eventData: any) => {
+      console.log('🎮 Received gameEvent from chat socket:', eventData);
+      this._gameEventSubject.next(eventData);
+    });
+
+    this.socket.on('gameUpdate', (eventData: any) => {
+      console.log('🎮 Received gameUpdate from chat socket:', eventData);
+      this._gameEventSubject.next(eventData);
+    });
+
     // Connection status listeners
     this.socket.on('connect', () => {
       console.log('Connected to chat server');
@@ -96,6 +109,24 @@ export class ChatServices {
 
   leaveGroup(conversationId: string): void {
     this.socket.emit('leaveGroup', { conversationId });
+  }
+
+  // Game room methods
+  initializeGameEventListener(): void {
+    // Game event listeners are already set up in the constructor
+    // This method is called to ensure they're ready
+  }
+
+  joinGameRoom(conversationId: string): void {
+    if (this.socket) {
+      this.socket.emit('joinGameRoom', { conversationId });
+    }
+  }
+
+  leaveGameRoom(conversationId: string): void {
+    if (this.socket) {
+      this.socket.emit('leaveGameRoom', { conversationId });
+    }
   }
 
   sendTypingIndicator(conversationId: string, isTyping: boolean, conversationType: 'one-to-one' | 'group'): void {

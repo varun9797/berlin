@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, OnInit, OnDestroy, OnChanges, SimpleChanges, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -63,6 +63,7 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
 
     // Game management
     isGameSectionVisible = false;
+    gameDisplayMode: 'compact' | 'normal' | 'maximized' = 'normal';
     isCreatingGame = false;
     gameCreationForm = {
         targetWord: '',
@@ -886,6 +887,114 @@ export class ChatBoxComponent implements OnInit, OnDestroy, OnChanges {
         if (this.isGameSectionVisible && this.selectedConversation?._id) {
             // Load active game when section is opened
             this.gameService.getActiveGame(this.selectedConversation._id).subscribe();
+        }
+        // Reset compact mode when closing
+        if (!this.isGameSectionVisible) {
+            this.gameDisplayMode = 'normal';
+        }
+    }
+
+    // Game display mode helpers
+    get isGameCompactMode(): boolean {
+        return this.gameDisplayMode === 'compact';
+    }
+
+    get isGameMaximized(): boolean {
+        return this.gameDisplayMode === 'maximized';
+    }
+
+    get isGameNormalMode(): boolean {
+        return this.gameDisplayMode === 'normal';
+    }
+
+    toggleGameCompactMode(): void {
+        this.gameDisplayMode = this.gameDisplayMode === 'compact' ? 'normal' : 'compact';
+    }
+
+    toggleGameMaximized(): void {
+        this.gameDisplayMode = this.gameDisplayMode === 'maximized' ? 'normal' : 'maximized';
+    }
+
+    setGameDisplayMode(mode: 'compact' | 'normal' | 'maximized'): void {
+        this.gameDisplayMode = mode;
+    }
+
+    // Keyboard shortcuts for game display modes
+    @HostListener('document:keydown', ['$event'])
+    handleKeyboardShortcuts(event: KeyboardEvent): void {
+        if (!this.isGameSectionVisible || !this.isGroupChat) return;
+        
+        // Only handle shortcuts when game is visible and focused
+        if (event.ctrlKey || event.metaKey) {
+            switch (event.key) {
+                case '1':
+                    event.preventDefault();
+                    this.setGameDisplayMode('compact');
+                    break;
+                case '2':
+                    event.preventDefault();
+                    this.setGameDisplayMode('normal');
+                    break;
+                case '3':
+                    event.preventDefault();
+                    this.setGameDisplayMode('maximized');
+                    break;
+                case 'Escape':
+                    if (this.isGameMaximized) {
+                        event.preventDefault();
+                        this.setGameDisplayMode('normal');
+                    }
+                    break;
+            }
+        } else if (event.key === 'Escape' && this.isGameMaximized) {
+            event.preventDefault();
+            this.setGameDisplayMode('normal');
+        }
+    }
+
+    hasActiveGame(): boolean {
+        if (!this.selectedConversation?._id) return false;
+        const currentGame = this.gameService.getCurrentGame(this.selectedConversation._id);
+        return currentGame !== null && (currentGame.status === 'waiting' || currentGame.status === 'active');
+    }
+
+    getGameStatus(): string {
+        if (!this.selectedConversation?._id) return '';
+        const currentGame = this.gameService.getCurrentGame(this.selectedConversation._id);
+        if (!currentGame) return '';
+        
+        switch (currentGame.status) {
+            case 'waiting':
+                return '⏳ Waiting';
+            case 'active':
+                return '🎯 Active';
+            case 'completed':
+                return '🏁 Completed';
+            default:
+                return '';
+        }
+    }
+
+    getActiveGamePlayersCount(): number {
+        if (!this.selectedConversation?._id) return 0;
+        const currentGame = this.gameService.getCurrentGame(this.selectedConversation._id);
+        return currentGame?.playersCount || 0;
+    }
+
+    getQuickGameStatus(): string {
+        if (!this.selectedConversation?._id) return '';
+        const currentGame = this.gameService.getCurrentGame(this.selectedConversation._id);
+        if (!currentGame) return '';
+        
+        switch (currentGame.status) {
+            case 'waiting':
+                return 'Ready to start';
+            case 'active':
+                return 'Game in progress';
+            case 'completed':
+                return 'Game ended';
+            default:
+                return '';
         }
     }
 

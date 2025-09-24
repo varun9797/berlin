@@ -135,6 +135,19 @@ export default function chatSocket(io: Server) {
             }
         });
 
+        // Game Events - Real-time game synchronization
+        socket.on("joinGameRoom", (data: { gameId: string, conversationId: string }) => {
+            console.log(`User ${userId} joining game room: ${data.gameId}`);
+            socket.join(`game_${data.gameId}`);
+            socket.join(`gameConv_${data.conversationId}`);
+        });
+
+        socket.on("leaveGameRoom", (data: { gameId: string, conversationId: string }) => {
+            console.log(`User ${userId} leaving game room: ${data.gameId}`);
+            socket.leave(`game_${data.gameId}`);
+            socket.leave(`gameConv_${data.conversationId}`);
+        });
+
         // Join a group conversation
         socket.on("joinGroup", async (data: { conversationId: string }) => {
             try {

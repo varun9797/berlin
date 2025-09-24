@@ -5,6 +5,7 @@ import { WordGameModel } from "./gameModel";
 import { ConversationModel } from "../chat/chatModel";
 import { v4 as uuidv4 } from 'uuid';
 import { Types } from 'mongoose';
+import { emitGameEvent } from '../../utils/socketInstance';
 
 // Common English 5-letter words for random selection
 const WORD_BANK = [
@@ -101,6 +102,23 @@ export const createWordGame = async (req: AuthRequest, res: Response): Promise<v
         await newGame.populate('players.userId', 'username');
 
         console.log('Game created with players:', newGame.players);
+
+        // Emit real-time game creation event
+        emitGameEvent({
+            gameId: newGame.gameId,
+            conversationId: conversationId,
+            event: 'game_created',
+            data: {
+                gameId: newGame.gameId,
+                conversationId: newGame.conversationId,
+                status: newGame.status,
+                createdBy: newGame.createdBy,
+                playersCount: newGame.players.length,
+                wordLength: newGame.wordLength,
+                maxAttempts: newGame.maxAttempts
+            },
+            timestamp: new Date()
+        });
 
         res.status(httpStatusCodes.CREATED).json({
             message: "Word game created successfully",
@@ -239,6 +257,19 @@ export const startWordGame = async (req: AuthRequest, res: Response): Promise<vo
         game.startedAt = new Date();
 
         await game.save();
+
+        // Emit real-time game start event
+        emitGameEvent({
+            gameId: game.gameId,
+            conversationId: game.conversationId.toString(),
+            event: 'game_started',
+            data: {
+                gameId: game.gameId,
+                status: 'active',
+                startedAt: game.startedAt
+            },
+            timestamp: new Date()
+        });
 
         res.status(httpStatusCodes.OK).json({
             message: "Game started successfully",
@@ -387,6 +418,54 @@ export const submitGuess = async (req: AuthRequest, res: Response): Promise<void
 
         await game.save();
 
+        // Populate user info for the guess event
+        await game.populate('players.userId', 'username');
+        const playerWithUser = game.players.find(p => p.userId._id.toString() === userId);
+        
+        // Emit real-time guess event to all players
+        emitGameEvent({
+            gameId: game.gameId,
+            conversationId: game.conversationId.toString(),
+            event: 'guess_made',
+            data: {
+                gameId: game.gameId,
+                player: {
+                    username: (playerWithUser?.userId as any)?.username || 'Unknown',
+                    userId: userId
+                },
+                guess: {
+                    word: guessWord,
+                    result,
+                    attemptNumber,
+                    isWinner,
+                    attemptsLeft: game.maxAttempts - attemptNumber
+                },
+                gameStatus: game.status,
+                allPlayersFinished
+            },
+            timestamp: new Date()
+        });
+
+        // If someone won, emit player won event
+        if (isWinner) {
+            emitGameEvent({
+                gameId: game.gameId,
+                conversationId: game.conversationId.toString(),
+                event: 'player_won',
+                data: {
+                    gameId: game.gameId,
+                    winner: {
+                        username: (playerWithUser?.userId as any)?.username || 'Unknown',
+                        userId: userId,
+                        score: player.score,
+                        attempts: attemptNumber
+                    },
+                    gameStatus: game.status
+                },
+                timestamp: new Date()
+            });
+        }
+
         res.status(httpStatusCodes.OK).json({
             message: isWinner ? "Congratulations! You won!" : "Guess submitted",
             result,
@@ -514,6 +593,21 @@ export const endWordGame = async (req: AuthRequest, res: Response): Promise<void
         game.endReason = 'ended_by_admin';
 
         await game.save();
+
+        // Emit real-time game end event
+        emitGameEvent({
+            gameId: game.gameId,
+            conversationId: game.conversationId.toString(),
+            event: 'game_ended',
+            data: {
+                gameId: game.gameId,
+                status: 'completed',
+                endReason: 'ended_by_admin',
+                targetWord: game.targetWord,
+                completedAt: game.completedAt
+            },
+            timestamp: new Date()
+        });
 
         res.status(httpStatusCodes.OK).json({
             message: "Game ended by admin",

@@ -7,6 +7,7 @@ import { Server } from "socket.io";
 import cors from 'cors';
 import privateRoutes from "./v1/routes/privateRoutes";
 import publicRoutes from './v1/routes/publicRoutes';
+import { setSocketInstance } from './v1/utils/socketInstance';
 
 const app = express();
 const allowedOrigins = [
@@ -54,6 +55,9 @@ const io = new Server(server, {
         credentials: true
     }
 });
+
+// Set Socket.IO instance for game events
+setSocketInstance(io);
 chatSocket(io);
 
 const PORT = process.env.PORT || 3000;

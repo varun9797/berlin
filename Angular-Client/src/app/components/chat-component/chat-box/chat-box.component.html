@@ -75,11 +75,13 @@
                         *ngIf="isGroupChat" 
                         (click)="toggleGameSection()" 
                         [class.active]="isGameSectionVisible"
+                        [class.has-active-game]="hasActiveGame()"
                         aria-label="Toggle game section"
-                        title="Word guessing game">
+                        [title]="hasActiveGame() ? 'Word game active - Click to view' : 'Create word guessing game'">
                     <svg viewBox="0 0 24 24" width="18" height="18">
                         <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M7.5,13.5L9,12L7.5,10.5L12,6L16.5,10.5L15,12L16.5,13.5L12,18L7.5,13.5Z"/>
                     </svg>
+                    <span class="game-indicator" *ngIf="hasActiveGame()">●</span>
                 </button>
 
                 <!-- Non-Admin: View Members Button -->
@@ -145,20 +147,67 @@
     </div>
 
     <!-- Game Section (Group Only) -->
-    <div class="game-section" *ngIf="isGameSectionVisible && isGroupChat">
-        <!-- Create Game Button -->
-        <div class="game-controls" *ngIf="!isCreatingGame">
-            <button class="btn-create-game" (click)="startCreateGame()">
-                🎮 Create Word Game
-            </button>
+    <div class="game-section" *ngIf="isGameSectionVisible && isGroupChat" 
+         [class.compact-mode]="isGameCompactMode"
+         [class.maximized-mode]="isGameMaximized"
+         [class.normal-mode]="isGameNormalMode">
+        <div class="game-header">
+            <div class="game-title">
+                <span class="game-icon">🎮</span>
+                <span>Word Game</span>
+                <span class="game-status-badge" *ngIf="getGameStatus()">{{ getGameStatus() }}</span>
+            </div>
+            <div class="game-header-actions">
+                <!-- Game Mode Indicator -->
+                <div class="game-mode-indicator" 
+                     title="Current mode: {{ isGameMaximized ? 'Maximized' : (isGameCompactMode ? 'Compact' : 'Normal') }}">
+                    <span class="mode-text">
+                        {{ isGameMaximized ? 'MAX' : (isGameCompactMode ? 'MIN' : 'NORM') }}
+                    </span>
+                </div>
+                
+                <!-- Maximize/Restore Button -->
+                <button 
+                    class="maximize-toggle-btn"
+                    (click)="toggleGameMaximized()"
+                    [title]="isGameMaximized ? 'Restore Game View' : 'Maximize Game (Full Screen)'">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <path *ngIf="!isGameMaximized" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                        <path *ngIf="isGameMaximized" d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+                    </svg>
+                </button>
+                <!-- Minimize/Expand Button -->
+                <button 
+                    class="compact-toggle-btn"
+                    (click)="toggleGameCompactMode()"
+                    [title]="isGameCompactMode ? 'Expand Game' : 'Minimize to Chat & Play'">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <path *ngIf="!isGameCompactMode" d="M19 13H5v-2h14v2z"/>
+                        <path *ngIf="isGameCompactMode" d="M19 11H5v2h14v-2zm0-4H5v2h14V7z"/>
+                    </svg>
+                </button>
+                <button class="close-game-btn" (click)="toggleGameSection()" title="Close Game Section">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
-        <!-- Create Game Form -->
-        <div class="create-game-form" *ngIf="isCreatingGame">
-            <div class="form-header">
-                <h4>Create Word Game</h4>
-                <button class="close-btn" (click)="cancelCreateGame()">&times;</button>
+        <div class="game-content" [class.hidden]="isGameCompactMode">
+            <!-- Create Game Button -->
+            <div class="game-controls" *ngIf="!isCreatingGame">
+                <button class="btn-create-game" (click)="startCreateGame()">
+                    � Create Word Game
+                </button>
             </div>
+
+            <!-- Create Game Form -->
+            <div class="create-game-form" *ngIf="isCreatingGame">
+                <div class="form-header">
+                    <h4>Create Word Game</h4>
+                    <button class="close-btn" (click)="cancelCreateGame()">&times;</button>
+                </div>
             
             <div class="form-body">
                 <div class="form-row">
@@ -219,14 +268,15 @@
                         Create Game
                     </button>
                 </div>
+                </div>
             </div>
-        </div>
 
-        <!-- Word Game Component -->
-        <app-word-game 
-            *ngIf="!isCreatingGame"
-            [conversationId]="selectedConversation?._id || ''">
-        </app-word-game>
+            <!-- Word Game Component -->
+            <app-word-game 
+                *ngIf="!isCreatingGame"
+                [conversationId]="selectedConversation?._id || ''">
+            </app-word-game>
+        </div>
     </div>
 
     <div class="message-input-container">

@@ -1,8 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, Subscription } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { DOCUMENT } from '@angular/common';
+import { ChatServices } from './chat-services';
 
 export interface WordGameAttempt {
   word: string;
@@ -88,8 +90,104 @@ export class GameService {
   
   // Store games by conversation ID to isolate state between groups
   private gamesByConversation = new Map<string, BehaviorSubject<WordGame | null>>();
+  
+  // Track connected rooms and game event subscription
+  private connectedRooms = new Set<string>();
+  private gameEventSubscription: Subscription | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    @Inject(DOCUMENT) private document: Document,
+    private chatService: ChatServices
+  ) {
+    // Subscribe to game events from chat service
+    this.initializeGameEventListener();
+  }
+
+  // Initialize game event listener using chat service
+  private initializeGameEventListener(): void {
+    // Ensure chat service is ready for game events
+    this.chatService.initializeGameEventListener();
+    
+    if (this.chatService.gameEventSubject) {
+      this.gameEventSubscription = this.chatService.gameEventSubject.subscribe(event => {
+        // Handle events for the current conversation
+        this.handleGameEvent(event);
+      });
+    }
+  }
+
+  // Cleanup subscriptions
+  public disconnect(): void {
+    if (this.gameEventSubscription) {
+      this.gameEventSubscription.unsubscribe();
+      this.gameEventSubscription = null;
+    }
+    this.connectedRooms.clear();
+    console.log('🎮 Game event listener disconnected');
+  }
+
+  // Handle incoming game events
+  private handleGameEvent(eventData: any): void {
+    console.log('🎮 Received game event:', eventData);
+    
+    if (!eventData.conversationId) {
+      console.warn('🎮 Game event missing required conversationId:', eventData);
+      return;
+    }
+
+    const conversationId = eventData.conversationId;
+    
+    // Refresh game data for the affected conversation
+    switch (eventData.event) {
+      case 'game_created':
+        console.log('🎮 Game created event received');
+        this.refreshCurrentGame(conversationId);
+        break;
+      case 'game_started':
+        console.log('🎮 Game started event received');
+        this.refreshCurrentGame(conversationId);
+        break;
+      case 'guess_made':
+        console.log('🎮 Guess made event received:', eventData.data?.player?.username || 'Unknown player');
+        this.refreshCurrentGame(conversationId);
+        break;
+      case 'player_won':
+        console.log('🎮 Player won event received:', eventData.data?.winner?.username || 'Unknown player');
+        this.refreshCurrentGame(conversationId);
+        break;
+      case 'game_ended':
+        console.log('🎮 Game ended event received');
+        this.refreshCurrentGame(conversationId);
+        break;
+      default:
+        console.log('🎮 Unknown game event:', eventData.event);
+    }
+  }
+
+  // Join game room for real-time updates
+  public joinGameRoom(gameId: string, conversationId: string): void {
+    const roomKey = `${gameId}_${conversationId}`;
+    
+    if (!this.connectedRooms.has(roomKey)) {
+      this.chatService.joinGameRoom(conversationId);
+      this.connectedRooms.add(roomKey);
+      console.log(`🎮 Joined game room: ${gameId} for conversation: ${conversationId}`);
+    } else {
+      console.log(`🎮 Already in game room: ${gameId} for conversation: ${conversationId}`);
+    }
+  }
+
+  // Leave game room when no longer needed
+  public leaveGameRoom(gameId: string, conversationId: string): void {
+    const roomKey = `${gameId}_${conversationId}`;
+    
+    if (this.connectedRooms.has(roomKey)) {
+      this.chatService.leaveGameRoom(conversationId);
+      this.connectedRooms.delete(roomKey);
+      console.log(`🎮 Left game room: ${gameId} for conversation: ${conversationId}`);
+    }
+  }
 
   // Get or create a game subject for a specific conversation
   private getGameSubjectForConversation(conversationId: string): BehaviorSubject<WordGame | null> {
@@ -113,6 +211,9 @@ export class GameService {
           // Set the current game for this specific conversation
           const gameSubject = this.getGameSubjectForConversation(request.conversationId);
           gameSubject.next(response.game);
+          
+          // Join game room for real-time updates
+          this.joinGameRoom(response.game.gameId, request.conversationId);
         }
       })
     );
@@ -164,6 +265,11 @@ export class GameService {
         if (gameConversationId) {
           const gameSubject = this.getGameSubjectForConversation(gameConversationId);
           gameSubject.next(game);
+          
+          // Join game room if game is active and not completed
+          if (game.status === 'active' || game.status === 'waiting') {
+            this.joinGameRoom(gameId, gameConversationId);
+          }
         }
       })
     );
@@ -175,9 +281,15 @@ export class GameService {
       tap((response: any) => {
         const gameSubject = this.getGameSubjectForConversation(conversationId);
         if (response && response.gameId) {
-          // If there's an active game, fetch its details
-          this.getWordGame(response.gameId, conversationId).subscribe();
+          console.log('🎮 Found active game:', response.gameId, 'for conversation:', conversationId);
+          // If there's an active game, fetch its details and join room
+          this.getWordGame(response.gameId, conversationId).subscribe(() => {
+            // Ensure we join the game room after fetching game details
+            console.log('🎮 Auto-joining room for active game:', response.gameId);
+            this.joinGameRoom(response.gameId, conversationId);
+          });
         } else {
+          console.log('🎮 No active game found for conversation:', conversationId);
           gameSubject.next(null);
         }
       })
@@ -186,16 +298,34 @@ export class GameService {
 
   // Refresh current game data for a specific conversation
   refreshCurrentGame(conversationId: string): void {
+    console.log('🎮 Refreshing current game for conversation:', conversationId);
     const gameSubject = this.getGameSubjectForConversation(conversationId);
     const currentGame = gameSubject.value;
     if (currentGame) {
-      this.getWordGame(currentGame.gameId, conversationId).subscribe();
+      console.log('🎮 Fetching updated game data for gameId:', currentGame.gameId);
+      this.getWordGame(currentGame.gameId, conversationId).subscribe({
+        next: (updatedGame) => {
+          console.log('🎮 Game data refreshed:', updatedGame);
+        },
+        error: (error) => {
+          console.error('🎮 Error refreshing game data:', error);
+        }
+      });
+    } else {
+      console.warn('🎮 No current game to refresh for conversation:', conversationId);
     }
   }
 
   // Clear current game for a specific conversation
   clearCurrentGame(conversationId: string): void {
     const gameSubject = this.getGameSubjectForConversation(conversationId);
+    const currentGame = gameSubject.value;
+    
+    // Leave game room if there was a current game
+    if (currentGame) {
+      this.leaveGameRoom(currentGame.gameId, conversationId);
+    }
+    
     gameSubject.next(null);
   }
 
