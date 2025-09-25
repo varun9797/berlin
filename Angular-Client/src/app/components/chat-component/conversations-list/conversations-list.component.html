@@ -1,8 +1,8 @@
 <div class="conversations-container">
     <div class="conversations-header">
         <h3 class="header-title">
-            <span class="chat-icon">💬</span>
-            Chats
+            <span class="chat-icon">�</span>
+            Groups
         </h3>
         <div class="user-profile-section">
             <div class="current-user-info">
@@ -26,9 +26,9 @@
 
     <div class="conversations-list">
         <div class="empty-state" *ngIf="combinedList.length === 0">
-            <div class="empty-icon">📭</div>
-            <p class="empty-message">No chats yet</p>
-            <p class="empty-subtitle">Start a chat or create a group</p>
+            <div class="empty-icon">🏠</div>
+            <p class="empty-message">No groups yet</p>
+            <p class="empty-subtitle">Create a group to get started</p>
         </div>
 
         <div class="conversation-item" *ngFor="let item of combinedList; trackBy: trackByItemId; let i = index"

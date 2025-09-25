@@ -11,87 +11,90 @@ import { ChatServices } from '../../../services/chat-services';
 })
 export class ListComponent {
 
-  onlineUsers: UserObject[] = [];
-  @Input() selectedUser: UserObject = { username: '', userId: '' };
-  @Output() userSelected = new EventEmitter<UserObject>();
+  groupConversations: ConversationObject[] = [];
+  @Input() selectedGroup: ConversationObject | null = null;
+  @Output() groupSelected = new EventEmitter<ConversationObject>();
   @Input() currentUserName: string = '';
+  @Input() currentUserId: string = '';
 
   constructor(public userService: UserService,
     public chatServices: ChatServices,
     public chatService: ChatServices) { }
 
   ngOnInit(): void {
-    this.setIsUserOnline();
-    this.getOnlineUsersFromApi();
-    this.onMessageListener();
+    this.loadGroupConversations();
+    this.subscribeToConversationUpdates();
   }
 
-  refreshUserList(): void {
-    this.getOnlineUsersFromApi();
+  refreshGroupList(): void {
+    this.loadGroupConversations();
   }
 
-  onSelectUser(user: UserObject): void {
-    this.userSelected.emit(user);
+  onSelectGroup(group: ConversationObject): void {
+    this.groupSelected.emit(group);
   }
 
-  private onMessageListener(): void {
-    // this.chatService.onMessage();
-    this.chatService.newMessageBehaviorSubject.subscribe((msg: ReceiveMessageObj | null) => {
-      // console.log('Message received in subscription:', msg);
-      if (msg) {
-        this.onlineUsers = this.onlineUsers.map(user => {
-          if (user.userId === msg.senderId) {
-            user.newMessageCount = (user.newMessageCount || 0) + 1;
-          }
-          return user;
-        })
-        // console.log('New message received:', msg);
-        msg.sender = msg.senderId;
-      }
-    })
-  }
-
-  getOnlineUsersFromApi(): void {
-    this.userService.getOnlineUsers().subscribe({
-      next: (response: UserObject[]) => {
-        this.onlineUsers = this.getAllUsersExpectCurrentUser(response);
-      }, error: (error) => {
-        console.error('Error fetching online users:', error);
-      }
-    })
-  }
-
-  setIsUserOnline(): void {
-    console.log('Setting up online users listener...');
-    this.chatService.onlineUsersSubject.subscribe(onlineUsers => {
-      console.log('Online users updated:******', onlineUsers);
-      this.onlineUsers = this.getAllUsersExpectCurrentUser(onlineUsers);
+  private subscribeToConversationUpdates(): void {
+    this.chatService.conversationsSubject.subscribe(conversations => {
+      this.groupConversations = conversations.filter(conv => conv.type === 'group');
     });
   }
 
-  getAllUsersExpectCurrentUser(response: UserObject[]): UserObject[] {
-    let onlineUsers = [];
-    for (let key in response) {
-      if (this.currentUserName !== response[key].username) {
-        response[key].newMessageCount = 0;
-        onlineUsers.push(response[key]);
+  loadGroupConversations(): void {
+    this.chatService.getUserConversations().subscribe({
+      next: (response: conversationApiResponseType) => {
+        if (response.data && response.data.length > 0) {
+          this.groupConversations = response.data.filter(conv => conv.type === 'group');
+          this.selectedGroup = this.groupConversations[0] || null;
+        } else {
+          this.groupConversations = [];
+          this.selectedGroup = null;
+        }
+      }, 
+      error: (error) => {
+        console.error('Error fetching group conversations:', error);
+        this.groupConversations = [];
       }
-    }
-    this.selectedUser = onlineUsers[0] || '';
-
-    return onlineUsers;
+    });
   }
 
-  getInitials(username: string): string {
-    if (!username) return '?';
-    return username.split(' ')
+  getGroupName(group: ConversationObject): string {
+    return group.name || 'Unnamed Group';
+  }
+
+  getGroupInitials(groupName: string): string {
+    if (!groupName) return 'G';
+    return groupName.split(' ')
       .map(word => word.charAt(0))
       .join('')
       .toUpperCase()
       .slice(0, 2);
   }
 
-  trackByUserId(index: number, user: UserObject): string {
-    return user.userId || index.toString();
+  getMemberCount(group: ConversationObject): number {
+    return group.participants ? group.participants.length : 0;
+  }
+
+  getGroupPreview(group: ConversationObject): string {
+    const memberCount = this.getMemberCount(group);
+    if (memberCount <= 1) return 'No other members';
+    
+    const otherMembers = group.participants.filter(p => p._id !== this.currentUserId);
+    if (otherMembers.length === 0) return 'Just you';
+    
+    if (otherMembers.length === 1) {
+      return `You and ${otherMembers[0].username}`;
+    }
+    
+    return `${memberCount} members`;
+  }
+
+  isCurrentUserAdmin(group: ConversationObject): boolean {
+    const currentUser = group.participants.find(p => p._id === this.currentUserId);
+    return currentUser?.role === 'admin';
+  }
+
+  trackByGroupId(index: number, group: ConversationObject): string {
+    return group._id || index.toString();
   }
 }

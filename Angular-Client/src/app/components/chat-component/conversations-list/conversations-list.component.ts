@@ -77,8 +77,9 @@ export class ConversationsListComponent implements OnInit, OnDestroy {
         });
 
         this.loadConversations();
-        this.loadOnlineUsers();
-        this.subscribeToOnlineUsers();
+        // Removed online users loading since we only show groups
+        // this.loadOnlineUsers();
+        // this.subscribeToOnlineUsers();
         this.subscribeToConversationUpdates();
     }
 
@@ -141,39 +142,17 @@ export class ConversationsListComponent implements OnInit, OnDestroy {
     private updateCombinedList(): void {
         // Ensure arrays are properly initialized
         const conversations = this.conversations || [];
-        const onlineUsers = this.onlineUsers || [];
 
-        // Separate groups and one-to-one conversations
+        // Show only group conversations
         const groupConversations = conversations.filter(conv => conv.type === 'group');
-        const oneToOneConversations = conversations.filter(conv => conv.type === 'one-to-one');
-
-        // Get user IDs from existing one-to-one conversations to avoid duplicates
-        const existingChatUserIds = oneToOneConversations.map(conv => {
-            const otherParticipant = conv.participants.find(p => p._id !== this.currentUserId);
-            return otherParticipant?._id;
-        }).filter(Boolean);
-
-        // Filter online users to exclude those who already have conversations
-        const availableUsers = onlineUsers.filter(user =>
-            !existingChatUserIds.includes(user.userId)
-        );
 
         this.combinedList = [
-            // First show group conversations
-            ...groupConversations,
-            // Then show one-to-one conversations
-            ...oneToOneConversations,
-            // Finally show available users (those without existing conversations)
-            ...availableUsers.map(user => ({
-                ...user,
-                isUserItem: true
-            } as UserObject & { isUserItem: true }))
+            // Only show group conversations
+            ...groupConversations
         ];
 
-        console.log('Combined list updated:', {
+        console.log('Combined list updated (groups only):', {
             groups: groupConversations.length,
-            oneToOne: oneToOneConversations.length,
-            availableUsers: availableUsers.length,
             total: this.combinedList.length
         });
     }

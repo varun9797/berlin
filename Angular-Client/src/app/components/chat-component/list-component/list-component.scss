@@ -1,4 +1,4 @@
-.user-list-container {
+.group-list-container {
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -35,7 +35,7 @@
     }
 }
 
-.users-icon {
+    .groups-icon {
     font-size: 24px;
 
     @media (max-width: 768px) {
@@ -43,7 +43,7 @@
     }
 }
 
-.user-count {
+    .group-count {
     font-size: 14px;
     color: #666;
     font-weight: 400;
@@ -77,7 +77,7 @@
     }
 }
 
-.user-list {
+.group-list {
     flex: 1;
     overflow-y: auto;
     padding: 8px 0;
@@ -125,7 +125,7 @@
     }
 }
 
-.user-item {
+.group-item {
     display: flex;
     align-items: center;
     padding: 16px 20px;
@@ -157,11 +157,11 @@
     }
 }
 
-.user-avatar {
+.group-avatar {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -179,31 +179,37 @@
         margin-right: 12px;
     }
 
-    .online-indicator {
+    .group-type-indicator {
         position: absolute;
         bottom: 2px;
         right: 2px;
-        width: 14px;
-        height: 14px;
-        background: #4CAF50;
-        border: 3px solid white;
+        width: 16px;
+        height: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid white;
         border-radius: 50%;
-        box-shadow: 0 0 6px rgba(76, 175, 80, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4CAF50;
 
         @media (max-width: 768px) {
-            width: 12px;
-            height: 12px;
-            border-width: 2px;
+            width: 14px;
+            height: 14px;
+        }
+
+        svg {
+            fill: currentColor;
         }
     }
 }
 
-.user-info {
+.group-info {
     flex: 1;
     min-width: 0;
 }
 
-.username {
+.group-name {
     font-size: 16px;
     font-weight: 600;
     color: #333;
@@ -217,36 +223,51 @@
     }
 }
 
-.user-status {
+.group-preview {
     font-size: 13px;
-    color: #4CAF50;
-    font-weight: 500;
+    color: #666;
+    font-weight: 400;
 
     @media (max-width: 768px) {
         font-size: 12px;
     }
 }
 
-.message-badge {
-    background: #ff4757;
-    color: white;
-    font-size: 12px;
+.group-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 8px;
+}
+
+.admin-badge {
+    font-size: 16px;
+    opacity: 0.8;
+    animation: shimmer 2s infinite;
+
+    @media (max-width: 768px) {
+        font-size: 14px;
+    }
+}
+
+.member-count-badge {
+    background: #e9ecef;
+    color: #495057;
+    font-size: 11px;
     font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 12px;
-    min-width: 20px;
-    height: 20px;
+    padding: 3px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    height: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 8px;
-    animation: pulse 2s infinite;
 
     @media (max-width: 768px) {
-        font-size: 11px;
-        padding: 3px 6px;
-        min-width: 18px;
-        height: 18px;
+        font-size: 10px;
+        padding: 2px 5px;
+        min-width: 16px;
+        height: 16px;
     }
 }
 
@@ -261,12 +282,17 @@
     }
 }
 
-.user-item:hover .chevron {
+.group-item:hover .chevron {
     color: #667eea;
     transform: translateX(2px);
 }
 
 // Animations
+@keyframes shimmer {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+}
+
 @keyframes pulse {
 
     0%,
@@ -291,7 +317,7 @@
     }
 }
 
-.user-item {
+.group-item {
     animation: slideIn 0.3s ease;
 }
 
@@ -305,7 +331,7 @@
         font-size: 16px;
     }
 
-    .user-item {
+    .group-item {
         padding: 12px 16px;
     }
 
